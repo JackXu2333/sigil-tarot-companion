@@ -32,3 +32,6 @@ dist-ssr
 
 # OS generated files
 Thumbs.db
+
+# Claude task planning files
+.claude/tasks/

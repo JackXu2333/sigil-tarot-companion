@@ -2,6 +2,29 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Phase 1: Pre-Work Planning and Review
+
+Before beginning implementation, follow these planning steps:
+
+1.  **Create a Detailed Plan:** Always start by formulating a clear and comprehensive plan.
+2.  **Document the Plan:** The finalized plan must be written to a markdown file in the following directory: `.claude/tasks/TASK_NAME.md`.
+3.  **Plan Requirements:** Your plan must include:
+    * A detailed strategy for implementation.
+    * The reasoning and justification for your chosen approach.
+    * A complete breakdown of the work into smaller, manageable sub-tasks.
+4.  **Conduct Research:** If the task requires external knowledge or specific software packages, use the designated "Task tool" to research and gather the latest information.
+5.  **Focus on MVP:** Adopt a Minimum Viable Product (MVP) mindset to avoid over-planning and focus on core requirements.
+6.  **Submit for Approval:** Once the plan is documented, submit it for review. **You must not begin implementation until the plan has been approved.**
+
+---
+
+## Phase 2: Active Implementation and Documentation
+
+While you are working on the task, adhere to the following:
+
+1.  **Maintain a Living Plan:** The plan should be treated as a dynamic document. Update it regularly to reflect your progress and any changes in strategy.
+2.  **Document Completed Work:** As you complete each sub-task, update the plan with detailed descriptions of the changes you made. This is crucial for ensuring a smooth handover of future tasks to other engineers.
+
 ## Development Commands
 
 - **Start development server**: `npm run dev`
