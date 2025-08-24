@@ -11,26 +11,61 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Architecture Overview
 
-This is a React + TypeScript + Vite project for a tarot companion application using modern web technologies:
+This is a React + TypeScript + Vite project for a Sigil Tarot Companion application using modern web technologies:
 
 ### Core Stack
-- **React 19** with TypeScript for the UI framework
-- **Vite** for build tooling and development server
-- **Tailwind CSS v4** for styling with the new @tailwindcss/vite plugin
+- **React 19.1.1** with TypeScript for the UI framework
+- **Vite 7.1.2** for build tooling and development server  
+- **Tailwind CSS v4.1.12** for styling with the new @tailwindcss/vite plugin
 - **shadcn/ui** components with "new-york" style variant
+- **Supabase** for backend services and authentication
+- **TanStack Query 5.85.5** for data fetching and caching
+- **React Router DOM 7.8.2** for client-side routing
 
 ### Project Structure
-- `src/App.tsx` - Main application component
-- `src/components/ui/` - Reusable UI components from shadcn/ui
-- `src/components/` - Custom application components
-- `src/lib/utils.ts` - Utility functions (includes `cn` for class merging)
-- `src/index.css` - Global styles and Tailwind imports
+```
+src/
+├── App.tsx                 - Main application component with routing
+├── main.tsx               - Application entry point
+├── index.css              - Global styles and Tailwind imports
+├── components/
+│   ├── ui/                - shadcn/ui components (17 components)
+│   ├── AuthPage.tsx       - Authentication component
+│   ├── Dashboard.tsx      - Main dashboard view
+│   ├── ClientChart.tsx    - Client data visualization
+│   ├── CopilotInsightsCard.tsx - AI insights component
+│   ├── NewClientForm.tsx  - Client creation form
+│   ├── ReadingWorkspace.tsx - Tarot reading interface
+│   └── NotFound.tsx       - 404 error page
+├── hooks/
+│   ├── use-auth.tsx       - Authentication hook
+│   ├── use-debounce.ts    - Debounce utility hook
+│   └── use-mobile.tsx     - Mobile detection hook
+├── services/
+│   ├── clientService.ts   - Client data operations
+│   ├── copilotService.ts  - AI/copilot functionality
+│   └── readingService.ts  - Tarot reading operations
+├── integrations/supabase/
+│   ├── client.ts          - Supabase client configuration
+│   └── types.ts           - Database type definitions
+├── data/
+│   ├── formOptions.ts     - Form configuration data
+│   ├── mockData.ts        - Mock data for development
+│   └── tarotDeck.ts       - Tarot card definitions
+├── lib/
+│   ├── utils.ts           - Utility functions (includes `cn` for class merging)
+│   └── demoMode.ts        - Demo mode functionality
+└── assets/                - Static assets
+```
 
 ### Key Configurations
 - **Path aliases**: `@/*` maps to `./src/*` (configured in both Vite and TypeScript)
 - **Component system**: Uses shadcn/ui with Radix UI primitives, class-variance-authority, and Lucide React icons
-- **Styling**: Tailwind CSS with CSS variables enabled, neutral base color
+- **Styling**: Tailwind CSS v4 with CSS variables enabled, neutral base color, oklch color space
 - **TypeScript**: Split configuration with separate configs for app and node environments
+- **Authentication**: Supabase Auth integration
+- **Data fetching**: TanStack Query for server state management
+- **Routing**: React Router v7 with BrowserRouter
 
 ## shadcn/ui Development Guidelines
 
@@ -115,8 +150,30 @@ const componentVariants = cva("base-classes", {
 export { Card, CardHeader, CardTitle, CardContent, CardFooter }
 ```
 
+## Additional Dependencies & Features
+
+### UI & Styling
+- **next-themes 0.4.6** - Theme switching functionality
+- **sonner 2.0.7** - Toast notifications
+- **recharts 3.1.2** - Chart and data visualization components
+- **tw-animate-css 1.3.7** - Additional CSS animations for Tailwind
+
+### Forms & Validation  
+- **react-hook-form 7.62.0** - Form state management
+- **@hookform/resolvers 5.2.1** - Form validation resolvers
+- **zod 4.1.0** - Schema validation
+
+### Date & Time
+- **date-fns 4.1.0** - Date manipulation utilities
+
+### Radix UI Components (v1+ latest)
+- Avatar, Checkbox, Dialog, Label, Progress, Select, Slider, Slot, Switch, Tooltip
+
 ## Development Notes
 - No test framework is currently configured
-- ESLint is set up for code linting
-- Uses React 19's modern patterns and TypeScript ~5.8.3
-- Vite handles hot module replacement and build optimization
+- ESLint 9.33.0 is set up for code linting with React-specific rules
+- Uses React 19.1.1's modern patterns and TypeScript 5.8.3
+- Vite 7.1.2 handles hot module replacement and build optimization
+- Supabase integration for authentication and data persistence
+- TanStack Query for efficient data fetching and caching
+- Demo mode functionality available for development/testing
