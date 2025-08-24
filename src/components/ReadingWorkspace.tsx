@@ -1,16 +1,33 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { ArrowLeft, Shuffle, FileText, Save, Sparkles } from "lucide-react";
+import { ArrowLeft, Shuffle, FileText, Save, Sparkles, ArrowUp } from "lucide-react";
 import { tarotDeck, type TarotCard } from "@/data/tarotDeck";
 import { clientService, type Client, type FullClient } from "@/services/clientService";
 import { readingService } from "@/services/readingService";
 import { toast } from "sonner";
 import { CopilotInsightsCard } from "@/components/CopilotInsightsCard";
 import type { CopilotInsights } from "@/services/copilotService";
-import { Card } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 import { getCopilotInsights, demoCopilotInsights } from "@/services/copilotService";
 
 interface DrawnTarotCard extends TarotCard {
@@ -162,7 +179,7 @@ export default function ReadingWorkspace({ copilotEnabled = true }: { copilotEna
 
   const saveReading = async () => {
     if (!selectedClient) {
-      alert("Please select a client for this reading.");
+      toast.error("Please select a client for this reading.");
       return;
     }
 
@@ -190,7 +207,7 @@ export default function ReadingWorkspace({ copilotEnabled = true }: { copilotEna
   };
 
   return (
-  <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 p-4 sm:p-8">
+  <div className="min-h-screen bg-background p-4 sm:p-8">
   <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -203,12 +220,15 @@ export default function ReadingWorkspace({ copilotEnabled = true }: { copilotEna
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 font-display">
+              <h1 className="text-2xl font-bold text-foreground font-display">
                 Live Reading - {selectedClient ? selectedClient.name : "Select a Client"}
               </h1>
-              <div className="flex items-center gap-2 mt-2">
-                <span className="font-semibold text-gray-700">Session Question:</span>
+              <div className="flex items-center gap-4 mt-4">
+                <Label htmlFor="session-question" className="font-semibold text-foreground whitespace-nowrap">
+                  Session Question:
+                </Label>
                 <Input
+                  id="session-question"
                   placeholder="What question is the client asking?"
                   value={sessionData.question}
                   onChange={(e) =>
@@ -219,43 +239,52 @@ export default function ReadingWorkspace({ copilotEnabled = true }: { copilotEna
               </div>
             </div>
           </div>
-          <Button
-            onClick={() => setShowSOAPModal(true)}
-          >
-            <FileText className="w-5 h-5" />
-            Complete Session
-          </Button>
+          <Dialog open={showSOAPModal} onOpenChange={setShowSOAPModal}>
+            <Button onClick={() => setShowSOAPModal(true)}>
+              <FileText className="w-5 h-5" />
+              Complete Session
+            </Button>
+          </Dialog>
         </div>
 
         {/* Client Select */}
         {!selectedClient && (
-          <Card className="p-6">
-            <div className="flex items-center gap-4">
-              <p className="font-semibold text-gray-700">Select a client for this reading:</p>
-              <select
-                onChange={(e) => handleClientSelect(e.target.value)}
-                className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-600 focus:outline-none w-64"
-              >
-                <option value="" disabled selected>Choose a client</option>
-                {loadingClients ? (
-                  <option disabled>Loading...</option>
-                ) : (
-                  clients.map((c) => (
-                    <option key={c.id} value={String(c.id)}>
-                      {c.name}
-                    </option>
-                  ))
-                )}
-              </select>
-            </div>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-4">
+              <Label className="font-semibold text-foreground">
+                Select a client for this reading:
+              </Label>
+              <Select onValueChange={handleClientSelect}>
+                <SelectTrigger className="w-64">
+                  <SelectValue placeholder="Choose a client" />
+                </SelectTrigger>
+                <SelectContent>
+                  {loadingClients ? (
+                    <SelectItem value="loading" disabled>
+                      Loading...
+                    </SelectItem>
+                  ) : (
+                    clients.map((c) => (
+                      <SelectItem key={c.id} value={String(c.id)}>
+                        {c.name}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+              </div>
+            </CardContent>
           </Card>
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Drawing Board */}
           <Card className="lg:col-span-2">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-              <h3 className="text-lg font-semibold text-indigo-600 font-brockmann">The Drawing Board</h3>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0">
+              <CardTitle className="text-lg font-semibold text-primary font-brockmann">
+                The Drawing Board
+              </CardTitle>
               <Button
                 variant="outline"
                 onClick={drawCards}
@@ -263,8 +292,8 @@ export default function ReadingWorkspace({ copilotEnabled = true }: { copilotEna
                 <Shuffle className="w-5 h-5" />
                 Draw Cards
               </Button>
-            </div>
-            <div className="p-6 pt-4 relative">
+            </CardHeader>
+            <CardContent className="space-y-6">
               {/* Synergy arrows overlay */}
               {/* {copilotInsights?.cardSynergies && (
                 <DrawingBoardSynergyArrows synergies={copilotInsights.cardSynergies} />
@@ -273,57 +302,69 @@ export default function ReadingWorkspace({ copilotEnabled = true }: { copilotEna
               {drawnCards.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {drawnCards.map((card, index) => (
-                    <div
+                    <Card
                       key={index}
                       id={`card-${card.name.replace(/\s+/g, "-")}`}
-                      className={`p-4 rounded-xl border-2 cursor-pointer transition-all duration-300 ${
+                      className={`cursor-pointer transition-all duration-300 ${
                         selectedCard?.name === card.name
-                          ? "border-indigo-600 bg-indigo-600/10 shadow-lg -translate-y-2"
-                          : "border-gray-200 hover:border-indigo-600/50 bg-gray-50"
+                          ? "border-primary bg-primary/10 shadow-lg -translate-y-2"
+                          : "hover:border-primary/50 bg-muted/50"
                       }`}
                       onClick={() => setSelectedCard(card)}
                     >
-                      <div className="text-center space-y-3">
+                      <CardContent className="pt-6 text-center space-y-4">
                         <div
-                          className={`w-24 h-40 mx-auto bg-gradient-to-br from-indigo-100 to-blue-100 rounded-lg flex items-center justify-center shadow-lg border-4 border-gray-100 text-4xl transition-transform duration-500 ${
+                          className={`w-24 h-40 mx-auto bg-gradient-to-br from-primary/20 to-primary/30 rounded-lg flex items-center justify-center shadow-sm border border-border text-4xl transition-transform duration-500 ${
                             card.position === "Reversed" ? "rotate-180" : ""
                           }`}
                         >
                           {card.emoji}
                         </div>
-                        <p className="font-semibold text-gray-900 font-brockmann">{card.name}</p>
-                        <span className={`inline-block mt-1 px-2 py-1 rounded text-xs font-semibold ${card.position === "Upright" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>{card.position}</span>
-                      </div>
-                    </div>
+                        <p className="font-semibold text-foreground font-brockmann">{card.name}</p>
+                        <Badge
+                          variant={card.position === "Upright" ? "secondary" : "destructive"}
+                        >
+                          {card.position}
+                        </Badge>
+                      </CardContent>
+                    </Card>
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-16">
-                  <div className="w-24 h-40 mx-auto bg-gray-100 rounded-lg flex items-center justify-center mb-4 border-2 border-dashed border-gray-300">
-                    <Shuffle className="w-8 h-8 text-gray-400" />
+                <div className="text-center py-16 space-y-4">
+                  <div className="w-24 h-40 mx-auto bg-muted rounded-lg flex items-center justify-center border-2 border-dashed border-muted-foreground/25">
+                    <Shuffle className="w-8 h-8 text-muted-foreground" />
                   </div>
-                  <p className="text-gray-400">Click "Draw Cards" to begin the reading</p>
+                  <p className="text-muted-foreground">Click "Draw Cards" to begin the reading</p>
                 </div>
               )}
-            </div>
+            </CardContent>
           </Card>
 
           {/* Card Details */}
           <div className="lg:col-span-1 flex flex-col gap-4">
-            <div className="border-2 border-gray-200 shadow bg-gray-50 rounded-xl">
-              <div className="p-6 pb-2 flex flex-col items-center">
-                <div className={`w-24 h-40 mx-auto rounded-lg flex items-center justify-center shadow-lg mb-2 border-4 border-gray-100 text-4xl bg-gradient-to-br from-indigo-100 to-blue-100 ${selectedCard?.position === "Reversed" ? "rotate-180" : ""}`}>
-                  {selectedCard ? selectedCard.emoji : <span className="text-gray-400">?</span>}
+            <Card className="bg-muted/50">
+              <CardHeader className="text-center space-y-4">
+                <div className={`w-24 h-40 mx-auto rounded-lg flex items-center justify-center shadow-sm border border-border text-4xl bg-gradient-to-br from-primary/20 to-primary/30 ${selectedCard?.position === "Reversed" ? "rotate-180" : ""}`}>
+                  {selectedCard ? selectedCard.emoji : <span className="text-muted-foreground">?</span>}
                 </div>
-                <h3 className={`text-lg font-bold text-center mt-2 font-brockmann ${selectedCard ? "text-gray-900" : "text-gray-400"}`}>{selectedCard ? selectedCard.name : "Select a Card"}</h3>
-                {selectedCard && (
-                  <span className={`inline-block mt-1 px-2 py-1 rounded text-xs font-semibold ${selectedCard.position === "Upright" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>{selectedCard.position}</span>
-                )}
-              </div>
-              <div className="p-6 pt-0 space-y-3">
+                <div className="space-y-2">
+                  <CardTitle className={`text-lg font-bold text-center font-brockmann ${selectedCard ? "text-foreground" : "text-muted-foreground"}`}>
+                    {selectedCard ? selectedCard.name : "Select a Card"}
+                  </CardTitle>
+                  {selectedCard && (
+                    <Badge
+                      variant={selectedCard.position === "Upright" ? "secondary" : "destructive"}
+                    >
+                      {selectedCard.position}
+                    </Badge>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
                 <div>
-                  <h4 className={`font-semibold mb-1 ${selectedCard ? "text-gray-900" : "text-gray-400"}`}>Meaning</h4>
-                  <p className={`text-sm ${selectedCard ? "text-gray-700" : "text-gray-400"}`}>
+                  <h4 className={`font-semibold mb-1 ${selectedCard ? "text-foreground" : "text-muted-foreground"}`}>Meaning</h4>
+                  <p className={`text-sm ${selectedCard ? "text-muted-foreground" : "text-muted-foreground"}`}>
                     {selectedCard
                       ? selectedCard.position === "Upright"
                         ? selectedCard.meaning.upright
@@ -332,152 +373,167 @@ export default function ReadingWorkspace({ copilotEnabled = true }: { copilotEna
                   </p>
                 </div>
                 <div>
-                  <h4 className={`font-semibold mb-1 ${selectedCard ? "text-gray-900" : "text-gray-400"}`}>Key Themes</h4>
+                  <h4 className={`font-semibold mb-1 ${selectedCard ? "text-foreground" : "text-muted-foreground"}`}>Key Themes</h4>
                   <div className="flex flex-wrap gap-1">
                     {selectedCard
                       ? selectedCard.keywords.map((keyword, i) => (
-                          <div key={i} className="text-xs inline-flex items-center rounded-md border px-2.5 py-0.5 font-semibold bg-blue-100 text-blue-700">{keyword}</div>
+                          <Badge key={i} variant="outline">
+                            {keyword}
+                          </Badge>
                         ))
-                      : <div className="text-xs inline-flex items-center rounded-md border px-2.5 py-0.5 font-semibold bg-gray-100 text-gray-400 opacity-50">—</div>}
+                      : <Badge variant="outline" className="opacity-50">
+                          —
+                        </Badge>}
                   </div>
                 </div>
 
                 {/* Card-specific Copilot insights */}
                 {selectedCard && copilotInsights && (copilotInsights as any).cardSynergies && (
-                  <div className="pt-2 border-t border-gray-200">
-                    <h4 className="font-semibold mb-1 text-sm flex items-center gap-1 text-indigo-600">
+                  <div className="pt-2 border-t border-border">
+                    <h4 className="font-semibold mb-1 text-sm flex items-center gap-1 text-primary">
                       <Sparkles className="w-4 h-4" />
                       AI Insights
                     </h4>
                     {(copilotInsights as any).cardSynergies
                       .filter((synergy: any) => synergy.cards?.includes(selectedCard.name))
                       .map((synergy: any, i: number) => (
-                        <div key={i} className="text-xs bg-indigo-600/5 rounded p-2 mt-1">
-                          <span className="font-medium text-indigo-600">
+                        <div key={i} className="text-xs bg-primary/5 rounded p-2 mt-1">
+                          <span className="font-medium text-primary">
                             {synergy.cards.join(" + ")}:
                           </span>
-                          <p className="text-gray-700 mt-0.5">{synergy.interpretation}</p>
+                          <p className="text-muted-foreground mt-0.5">{synergy.interpretation}</p>
                         </div>
                       ))}
                     {(copilotInsights as any).narrativeElements && selectedCard && (
                       <div className="text-xs mt-2">
-                        <span className="font-medium text-gray-500">Related myths: </span>
-                        <span className="text-gray-500 italic">
+                        <span className="font-medium text-muted-foreground">Related myths: </span>
+                        <span className="text-muted-foreground italic">
                           {(copilotInsights as any).narrativeElements[0]}
                         </span>
                       </div>
                     )}
                   </div>
                 )}
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
 
         {/* Copilot Insights Card */}
-        <div className="w-full mt-8">
-          <div className="flex items-center justify-end mb-2 gap-2">
-            <label htmlFor="demo-toggle" className="text-xs text-gray-400">Demo Copilot</label>
-            <input
+        <div className="space-y-4">
+          <div className="flex items-center justify-end gap-4">
+            <Label htmlFor="demo-toggle" className="text-sm text-muted-foreground">
+              Demo Copilot
+            </Label>
+            <Switch
               id="demo-toggle"
-              type="checkbox"
               checked={useDemoCopilot}
-              onChange={e => setUseDemoCopilot(e.target.checked)}
-              className="accent-indigo-600 w-4 h-4"
+              onCheckedChange={setUseDemoCopilot}
             />
-            <span className="text-xs text-gray-400">{useDemoCopilot ? "Demo" : "Live"}</span>
+            <span className="text-sm text-muted-foreground">
+              {useDemoCopilot ? "Demo" : "Live"}
+            </span>
           </div>
           {loadingCopilot ? (
-            <div className="mb-4 rounded-xl border border-gray-200 bg-white shadow p-6 text-center text-gray-400">Generating insights...</div>
+            <Card>
+              <CardContent className="pt-6 text-center">
+                <div className="space-y-4">
+                  <Skeleton className="h-4 w-3/4 mx-auto" />
+                  <Skeleton className="h-4 w-1/2 mx-auto" />
+                  <Skeleton className="h-20 w-full" />
+                </div>
+                <p className="text-muted-foreground mt-4">Generating insights...</p>
+              </CardContent>
+            </Card>
           ) : (
             copilotInsights && <CopilotInsightsCard insights={copilotInsights} onSendToSOAP={handleSendToSOAP} />
           )}
-          <div className="text-xs text-gray-400 text-center mt-2 flex items-center justify-center gap-1">
-            <span className="inline-flex items-center gap-1">
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 17l6-6m0 0l6-6m-6 6v12" /></svg>
-              Click the icon to send an insight to your SOAP notes.
-            </span>
+          <div className="text-sm text-muted-foreground text-center mt-4 flex items-center justify-center gap-2">
+            <ArrowUp className="w-4 h-4 text-primary" />
+            <span>Click the icon to send an insight to your SOAP notes.</span>
           </div>
         </div>
       </div>
 
       {/* SOAP Modal */}
-      {showSOAPModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center">
-          <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-xl border border-gray-200 p-8">
-            <button
-              onClick={() => setShowSOAPModal(false)}
-              className="absolute right-4 top-4 rounded-full bg-gray-100 hover:bg-gray-200 p-2 transition"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
-              <span className="sr-only">Close</span>
-            </button>
-            <h2 className="text-xl font-bold text-indigo-600 mb-6 text-center font-playfair">S.O.A.P. Notes</h2>
-            <div className="space-y-6">
-              <div>
-                <label className="text-sm font-semibold text-gray-700">Subjective (Client's words & mood)</label>
-                <Textarea
-                  placeholder="How is the client feeling? What are they expressing?"
-                  value={sessionData.subjective}
-                  onChange={(e) =>
-                    setSessionData({
-                      ...sessionData,
-                      subjective: e.target.value,
-                    })
-                  }
-                  className="mt-2 min-h-[60px]"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-semibold text-gray-700">Objective (Cards drawn)</label>
-                <div className="mt-2 p-3 bg-gray-50 rounded-md">
-                  {drawnCards.length > 0 ? (
-                    <div className="flex flex-wrap gap-2">
-                      {drawnCards.map((card, index) => (
-                        <div key={index} className="inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold bg-indigo-600 text-white shadow">{card.name} ({card.position})</div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-gray-400 text-sm">No cards drawn yet</p>
-                  )}
-                </div>
-              </div>
-              <div>
-                <label className="text-sm font-semibold text-gray-700">Assessment (Your interpretation)</label>
-                <Textarea
-                  placeholder="What story do the cards tell? Your synthesis and interpretation..."
-                  value={sessionData.assessment}
-                  onChange={(e) =>
-                    setSessionData({
-                      ...sessionData,
-                      assessment: e.target.value,
-                    })
-                  }
-                  className="mt-2 min-h-[60px]"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-semibold text-gray-700">Plan (Actionable advice)</label>
-                <Textarea
-                  placeholder="What are the recommended next steps? Actionable guidance..."
-                  value={sessionData.plan}
-                  onChange={(e) =>
-                    setSessionData({ ...sessionData, plan: e.target.value })
-                  }
-                  className="mt-2 min-h-[60px]"
-                />
-              </div>
-              <Button
-                onClick={saveReading}
-                className="w-full"
-              >
-                <Save className="w-5 h-5" />
-                Save Reading to Timeline
-              </Button>
+      <Dialog open={showSOAPModal} onOpenChange={setShowSOAPModal}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-primary text-center font-playfair">
+              S.O.A.P. Notes
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold text-foreground">
+                Subjective (Client's words & mood)
+              </Label>
+              <Textarea
+                placeholder="How is the client feeling? What are they expressing?"
+                value={sessionData.subjective}
+                onChange={(e) =>
+                  setSessionData({
+                    ...sessionData,
+                    subjective: e.target.value,
+                  })
+                }
+                className="min-h-[80px]"
+              />
             </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold text-foreground">
+                Objective (Cards drawn)
+              </Label>
+              <div className="p-4 bg-muted/50 rounded-md">
+                {drawnCards.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {drawnCards.map((card, index) => (
+                      <Badge key={index} variant="default">
+                        {card.name} ({card.position})
+                      </Badge>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground text-sm">No cards drawn yet</p>
+                )}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold text-foreground">
+                Assessment (Your interpretation)
+              </Label>
+              <Textarea
+                placeholder="What story do the cards tell? Your synthesis and interpretation..."
+                value={sessionData.assessment}
+                onChange={(e) =>
+                  setSessionData({
+                    ...sessionData,
+                    assessment: e.target.value,
+                  })
+                }
+                className="min-h-[80px]"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold text-foreground">
+                Plan (Actionable advice)
+              </Label>
+              <Textarea
+                placeholder="What are the recommended next steps? Actionable guidance..."
+                value={sessionData.plan}
+                onChange={(e) =>
+                  setSessionData({ ...sessionData, plan: e.target.value })
+                }
+                className="min-h-[80px]"
+              />
+            </div>
+            <Button onClick={saveReading} className="w-full">
+              <Save className="w-5 h-5" />
+              Save Reading to Timeline
+            </Button>
           </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -1,9 +1,12 @@
 import { useState, useEffect } from "react";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useController, type Control, FormProvider } from "react-hook-form";
+import { useNavigate } from "react-router-dom";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { ArrowLeft } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+
+import { clientService } from "@/services/clientService";
 import {
   pronounOptions,
   howWeMetOptions,
@@ -14,12 +17,20 @@ import {
   coreValueOptions,
   ethnicityOptions,
 } from "@/data/formOptions";
-import { clientService } from "@/services/clientService";
-import { toast } from "sonner";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 
 // Zod schema for form validation
@@ -78,30 +89,15 @@ const SliderField = ({
     <div className="space-y-2">
       <Label className="text-sm font-medium leading-none">{label}</Label>
       <div className="flex items-center gap-4">
-        <input
-          type="range"
-          value={value}
-          onChange={(e) => field.onChange(parseFloat(e.target.value))}
+        <Slider
+          value={[value]}
+          onValueChange={(values) => field.onChange(values[0])}
           min={min}
           max={max}
           step={step}
-          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600
-            [&::-webkit-slider-thumb]:appearance-none
-            [&::-webkit-slider-thumb]:w-5
-            [&::-webkit-slider-thumb]:h-5
-            [&::-webkit-slider-thumb]:rounded-full
-            [&::-webkit-slider-thumb]:bg-indigo-600
-            [&::-webkit-slider-thumb]:border-2
-            [&::-webkit-slider-thumb]:border-white
-            [&::-webkit-slider-thumb]:shadow
-            [&::-webkit-slider-thumb]:transition
-            focus:outline-none
-            "
-          style={{
-            accentColor: "#6366f1", // fallback for non-Tailwind browsers
-          }}
+          className="flex-1"
         />
-        <span className="w-10 text-right font-mono text-gray-700">
+        <span className="w-10 text-right font-mono text-foreground">
           {value}
         </span>
       </div>
@@ -134,31 +130,16 @@ const BipolarSliderField = ({
     <div className="space-y-2">
       <Label className="text-sm font-medium leading-none">{label}</Label>
       <div className="flex items-center gap-2">
-        <span className="text-xs text-gray-400 w-4 text-left">{leftLabel}</span>
-        <input
-          type="range"
-          value={value}
-          onChange={(e) => field.onChange(parseFloat(e.target.value))}
+        <span className="text-xs text-muted-foreground w-4 text-left">{leftLabel}</span>
+        <Slider
+          value={[value]}
+          onValueChange={(values) => field.onChange(values[0])}
           min={min}
           max={max}
           step={1}
-          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600
-            [&::-webkit-slider-thumb]:appearance-none
-            [&::-webkit-slider-thumb]:w-5
-            [&::-webkit-slider-thumb]:h-5
-            [&::-webkit-slider-thumb]:rounded-full
-            [&::-webkit-slider-thumb]:bg-indigo-600
-            [&::-webkit-slider-thumb]:border-2
-            [&::-webkit-slider-thumb]:border-white
-            [&::-webkit-slider-thumb]:shadow
-            [&::-webkit-slider-thumb]:transition
-            focus:outline-none
-            "
-          style={{
-            accentColor: "#6366f1",
-          }}
+          className="flex-1"
         />
-        <span className="text-xs text-gray-400 w-4 text-right">{rightLabel}</span>
+        <span className="text-xs text-muted-foreground w-4 text-right">{rightLabel}</span>
       </div>
     </div>
   );
@@ -181,22 +162,19 @@ const SelectField = ({
   const { field } = useController({ name, control });
   return (
     <div className="space-y-2">
-      <Label htmlFor={name} className="text-sm font-medium leading-none">{label}</Label>
-      <select
-        id={name}
-        {...field}
-        className="block w-full h-10 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 transition"
-        value={field.value ?? ""}
-      >
-        <option value="" disabled hidden>
-          {placeholder}
-        </option>
-        {options.map((option) => (
-          <option key={option} value={option} className="text-gray-700">
-            {option}
-          </option>
-        ))}
-      </select>
+      <Label className="text-sm font-medium leading-none">{label}</Label>
+      <Select value={field.value != null ? String(field.value) : ""} onValueChange={field.onChange}>
+        <SelectTrigger>
+          <SelectValue placeholder={placeholder} />
+        </SelectTrigger>
+        <SelectContent>
+          {options.map((option) => (
+            <SelectItem key={option} value={option}>
+              {option}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     </div>
   );
 };
@@ -338,7 +316,7 @@ export default function NewClientForm() {
   }
 
   return (
-  <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 p-4 sm:p-8">
+  <div className="min-h-screen bg-background p-4 sm:p-8">
   <Card className="max-w-3xl mx-auto overflow-hidden">
         {/* Header */}
         <CardHeader className="flex flex-row items-center gap-4">
@@ -362,7 +340,7 @@ export default function NewClientForm() {
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-10">
             {/* Basic Info */}
             <section>
-              <h2 className="text-lg font-semibold text-indigo-600 mb-4 border-l-4 border-indigo-600 pl-2 font-brockmann">Basic Information</h2>
+              <h2 className="text-lg font-semibold text-primary mb-4 border-l-4 border-primary pl-2">Basic Information</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="name" className="text-sm font-medium">Full Name <span className="text-destructive">*</span></Label>
@@ -416,7 +394,7 @@ export default function NewClientForm() {
 
             {/* Vitals */}
             <section>
-              <h2 className="text-lg font-semibold text-indigo-600 mb-4 border-l-4 border-indigo-600 pl-2 font-brockmann">Vitals</h2>
+              <h2 className="text-lg font-semibold text-primary mb-4 border-l-4 border-primary pl-2">Vitals</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="currentVibe" className="text-sm font-medium">Current Life Vibe</Label>
@@ -460,28 +438,28 @@ export default function NewClientForm() {
             {/* Personality Profile */}
             <section>
               <div className="flex items-center justify-between mb-2">
-                <h2 className="text-lg font-semibold text-indigo-600 border-l-4 border-indigo-600 pl-2 font-brockmann">Personality Profile</h2>
-                <label className="flex items-center gap-2 text-sm font-medium cursor-pointer">
-                  <input
-                    type="checkbox"
+                <h2 className="text-lg font-semibold text-primary border-l-4 border-primary pl-2">Personality Profile</h2>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="personality-toggle"
                     checked={showPersonality}
-                    onChange={() => setShowPersonality(!showPersonality)}
-                    className="accent-indigo-600 h-4 w-4"
+                    onCheckedChange={(checked) => setShowPersonality(checked === true)}
                   />
-                  Add Personality Profile
-                </label>
+                  <Label htmlFor="personality-toggle" className="text-sm font-medium cursor-pointer">
+                    Add Personality Profile
+                  </Label>
+                </div>
               </div>
               {showPersonality && (
-                <div className="space-y-6 bg-gray-50 rounded-lg p-4 border border-gray-100">
+                <div className="space-y-6 bg-muted rounded-lg p-4 border">
                   <div className="space-y-2">
-                    <label htmlFor="mbtiType" className="text-sm font-medium">MBTI Type</label>
-                    <input
+                    <Label htmlFor="mbtiType" className="text-sm font-medium">MBTI Type</Label>
+                    <Input
                       {...form.register("mbtiType")}
                       id="mbtiType"
                       placeholder="e.g., INFJ"
                       onChange={handleMbtiTypeChange}
                       maxLength={4}
-                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-600 focus:outline-none"
                     />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -550,19 +528,20 @@ export default function NewClientForm() {
             {/* Ability Scores */}
             <section>
               <div className="flex items-center justify-between mb-2">
-                <h2 className="text-lg font-semibold text-indigo-600 border-l-4 border-indigo-600 pl-2 font-brockmann">Ability Scores</h2>
-                <label className="flex items-center gap-2 text-sm font-medium cursor-pointer">
-                  <input
-                    type="checkbox"
+                <h2 className="text-lg font-semibold text-primary border-l-4 border-primary pl-2">Ability Scores</h2>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="abilities-toggle"
                     checked={showAbilities}
-                    onChange={() => setShowAbilities(!showAbilities)}
-                    className="accent-indigo-600 h-4 w-4"
+                    onCheckedChange={(checked) => setShowAbilities(checked === true)}
                   />
-                  Add Ability Scores
-                </label>
+                  <Label htmlFor="abilities-toggle" className="text-sm font-medium cursor-pointer">
+                    Add Ability Scores
+                  </Label>
+                </div>
               </div>
               {showAbilities && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 rounded-lg p-4 border border-gray-100">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-muted rounded-lg p-4 border">
                   <SliderField
                     control={control}
                     name="abilityIntuition"
@@ -617,7 +596,7 @@ export default function NewClientForm() {
 
             {/* Reader's Notes */}
             <section>
-              <h2 className="text-lg font-semibold text-indigo-600 mb-4 border-l-4 border-indigo-600 pl-2 font-brockmann">Reader's Notes</h2>
+              <h2 className="text-lg font-semibold text-primary mb-4 border-l-4 border-primary pl-2">Reader's Notes</h2>
               <div className="space-y-2">
                 <Textarea
                   {...form.register("readerNotes")}

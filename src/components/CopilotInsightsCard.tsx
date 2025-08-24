@@ -1,21 +1,40 @@
-import React, { useState } from "react";
-import { Sparkles, Lightbulb, BookOpen, HelpCircle, Send, TrendingUp, Activity, Flame, Droplets, Wind, Mountain, Brain, Heart, Star, Package, AlertTriangle, CheckCircle, Zap } from "lucide-react";
+import React from "react";
+import { Sparkles, Lightbulb, BookOpen, HelpCircle, Send, TrendingUp, Flame, Droplets, Wind, Mountain, Brain, Heart, Star, Package, AlertTriangle, CheckCircle } from "lucide-react";
 import type { CopilotInsights } from "@/services/copilotService";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 
 interface Props {
   insights: CopilotInsights;
   onSendToSOAP: (content: string | string[]) => void;
 }
 
-// Helper to get sentiment color
+// Constants for thresholds
+const THRESHOLDS = {
+  HIGH_CLARITY: 8,
+  LOW_CLARITY: 3,
+  HIGH_AGENCY: 8,
+  LOW_AGENCY: 3,
+  HIGH_DIFFICULTY: 8,
+  LOW_DIFFICULTY: 2,
+  HIGH_OPPORTUNITY: 8,
+  LOW_OPPORTUNITY: 3,
+  HIGH_ENERGY: 70,
+  DOMINANT_ELEMENT: 40,
+  DOMINANT_ENERGY: 40,
+  HIGH_ARCHETYPE: 8,
+  HIGH_SENTIMENT: 0.5,
+  LOW_SENTIMENT: -0.5
+} as const;
+
+// Helper to get sentiment color using design tokens
 const getSentimentColor = (value: number) => {
-  if (value >= 0.5) return "text-green-600";
-  if (value >= 0) return "text-blue-600";
-  if (value >= -0.5) return "text-orange-600";
-  return "text-red-600";
+  if (value >= THRESHOLDS.HIGH_SENTIMENT) return "text-emerald-600 dark:text-emerald-400";
+  if (value >= 0) return "text-primary";
+  if (value >= THRESHOLDS.LOW_SENTIMENT) return "text-amber-600 dark:text-amber-400";
+  return "text-destructive";
 };
 
 // Helper to format sentiment value
@@ -24,11 +43,11 @@ const formatSentiment = (value: number) => {
   return `${percentage}%`;
 };
 
-// Helper to get severity color
-const getSeverityColor = (severity: number) => {
-  if (severity >= 7) return "text-red-600";
-  if (severity >= 4) return "text-orange-600";
-  return "text-yellow-600";
+// Helper to get severity badge variant
+const getSeverityVariant = (severity: number): "destructive" | "secondary" | "outline" => {
+  if (severity >= 7) return "destructive";
+  if (severity >= 4) return "secondary";
+  return "outline";
 };
 
 export function CopilotInsightsCard({ insights, onSendToSOAP }: Props) {
@@ -41,8 +60,8 @@ export function CopilotInsightsCard({ insights, onSendToSOAP }: Props) {
   }
 
   // Highlight logic
-  const highOpportunity = insights.scales.opportunity >= 7;
-  const lowDifficulty = insights.scales.difficulty <= 3;
+  const highOpportunity = insights.scales.opportunity >= THRESHOLDS.HIGH_OPPORTUNITY;
+  const lowDifficulty = insights.scales.difficulty <= THRESHOLDS.LOW_DIFFICULTY;
   const activeReceptiveSum = insights.energyBalance.active + insights.energyBalance.receptive;
   const energyAreas = [
     { key: 'mental', value: insights.energyBalance.mental },
@@ -59,8 +78,6 @@ export function CopilotInsightsCard({ insights, onSendToSOAP }: Props) {
   ];
   const dominantElement = elements.reduce((max, curr) => curr.value > max.value ? curr : max, elements[0]);
 
-  // Collapsed/expanded state for archetypes
-  const [showAllArchetypes, setShowAllArchetypes] = React.useState(false);
 
 
   return (
@@ -73,26 +90,26 @@ export function CopilotInsightsCard({ insights, onSendToSOAP }: Props) {
       </CardHeader>
       <CardContent className="space-y-4 text-sm pt-0">
         {/* Sentiment Overview */}
-        <section className="bg-muted rounded-lg p-3 border">
-          <h4 className="font-medium text-sm mb-2 flex items-center gap-2 text-foreground">
+        <section className="bg-muted/50 rounded-lg p-4 border">
+          <h4 className="font-medium text-sm mb-3 flex items-center gap-2 text-foreground">
             <TrendingUp className="w-4 h-4" />
             Sentiment Analysis
           </h4>
-          <div className="grid grid-cols-3 gap-2">
-            <div className="text-center bg-background rounded p-2 border">
-              <div className={`font-bold text-lg ${Math.abs(insights.sentiment.overall) > 0.5 ? 'text-primary' : 'text-foreground'}`}>
+          <div className="grid grid-cols-3 gap-3">
+            <div className="text-center bg-background rounded-md p-3 border">
+              <div className={`font-bold text-lg ${Math.abs(insights.sentiment.overall) > THRESHOLDS.HIGH_SENTIMENT ? 'text-primary' : 'text-foreground'}`}>
                 {formatSentiment(insights.sentiment.overall)}
               </div>
               <div className="text-xs text-muted-foreground">Overall</div>
             </div>
-            <div className="text-center bg-background rounded p-2 border">
-              <div className={`font-bold text-lg ${Math.abs(insights.sentiment.emotional) > 0.5 ? 'text-primary' : 'text-foreground'}`}>
+            <div className="text-center bg-background rounded-md p-3 border">
+              <div className={`font-bold text-lg ${Math.abs(insights.sentiment.emotional) > THRESHOLDS.HIGH_SENTIMENT ? 'text-primary' : 'text-foreground'}`}>
                 {formatSentiment(insights.sentiment.emotional)}
               </div>
               <div className="text-xs text-muted-foreground">Emotional</div>
             </div>
-            <div className="text-center bg-background rounded p-2 border">
-              <div className={`font-bold text-lg ${Math.abs(insights.sentiment.practical) > 0.5 ? 'text-primary' : 'text-foreground'}`}>
+            <div className="text-center bg-background rounded-md p-3 border">
+              <div className={`font-bold text-lg ${Math.abs(insights.sentiment.practical) > THRESHOLDS.HIGH_SENTIMENT ? 'text-primary' : 'text-foreground'}`}>
                 {formatSentiment(insights.sentiment.practical)}
               </div>
               <div className="text-xs text-muted-foreground">Practical</div>
@@ -105,106 +122,122 @@ export function CopilotInsightsCard({ insights, onSendToSOAP }: Props) {
           {/* Left Column */}
           <div className="space-y-4">
             {/* Key Metrics */}
-            <section className="bg-muted rounded-lg p-3 border">
-              <h4 className="font-medium text-sm mb-2 text-foreground">Key Metrics</h4>
-              <div className="space-y-2">
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-gray-600">Clarity</span>
-                  <span className={`font-medium ${insights.scales.clarity >= 8 || insights.scales.clarity <= 3 ? 'text-indigo-700' : 'text-gray-700'}`}>
-                    {insights.scales.clarity}/10
-                    {insights.scales.clarity >= 8 && <span className="ml-1 text-indigo-600">✨</span>}
-                    {insights.scales.clarity <= 3 && <span className="ml-1 text-orange-500">⚠️</span>}
-                  </span>
-                </div>
-                <div className="h-1.5 bg-gray-200 rounded-full">
-                  <div className={`h-full rounded-full transition-all ${insights.scales.clarity >= 8 ? 'bg-indigo-600' : insights.scales.clarity <= 3 ? 'bg-orange-500' : 'bg-gray-400'}`} style={{ width: `${insights.scales.clarity * 10}%` }} />
-                </div>
-                
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-gray-600">Agency</span>
-                  <span className={`font-medium ${insights.scales.agency >= 8 || insights.scales.agency <= 3 ? 'text-indigo-700' : 'text-gray-700'}`}>
-                    {insights.scales.agency}/10
-                    {insights.scales.agency >= 8 && <span className="ml-1 text-indigo-600">💪</span>}
-                    {insights.scales.agency <= 3 && <span className="ml-1 text-orange-500">⚠️</span>}
-                  </span>
-                </div>
-                <div className="h-1.5 bg-gray-200 rounded-full">
-                  <div className={`h-full rounded-full transition-all ${insights.scales.agency >= 8 ? 'bg-indigo-600' : insights.scales.agency <= 3 ? 'bg-orange-500' : 'bg-gray-400'}`} style={{ width: `${insights.scales.agency * 10}%` }} />
+            <section className="bg-muted/50 rounded-lg p-4 border">
+              <h4 className="font-medium text-sm mb-3 text-foreground">Key Metrics</h4>
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">Clarity</span>
+                    <span className={`font-medium ${insights.scales.clarity >= THRESHOLDS.HIGH_CLARITY || insights.scales.clarity <= THRESHOLDS.LOW_CLARITY ? 'text-primary' : 'text-foreground'}`}>
+                      {insights.scales.clarity}/10
+                      {insights.scales.clarity >= THRESHOLDS.HIGH_CLARITY && <span className="ml-1 text-primary">✨</span>}
+                      {insights.scales.clarity <= THRESHOLDS.LOW_CLARITY && <span className="ml-1 text-amber-600 dark:text-amber-400">⚠️</span>}
+                    </span>
+                  </div>
+                  <Progress 
+                    value={insights.scales.clarity * 10}
+                    className={`${insights.scales.clarity >= THRESHOLDS.HIGH_CLARITY ? 'bg-primary/20' : insights.scales.clarity <= THRESHOLDS.LOW_CLARITY ? 'bg-amber-600/20 dark:bg-amber-400/20' : 'bg-muted'}`}
+                    aria-label={`Clarity level: ${insights.scales.clarity} out of 10`}
+                  />
                 </div>
                 
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-gray-600">Difficulty</span>
-                  <span className={`font-medium ${insights.scales.difficulty >= 8 || insights.scales.difficulty <= 2 ? 'text-indigo-700' : 'text-gray-700'}`}>
-                    {insights.scales.difficulty}/10
-                    {insights.scales.difficulty >= 8 && <span className="ml-1 text-red-500">🔥</span>}
-                    {insights.scales.difficulty <= 2 && <span className="ml-1 text-green-500">✅</span>}
-                  </span>
-                </div>
-                <div className="h-1.5 bg-gray-200 rounded-full">
-                  <div className={`h-full rounded-full transition-all ${insights.scales.difficulty >= 8 ? 'bg-red-500' : insights.scales.difficulty <= 2 ? 'bg-green-500' : 'bg-gray-400'}`} style={{ width: `${insights.scales.difficulty * 10}%` }} />
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">Agency</span>
+                    <span className={`font-medium ${insights.scales.agency >= THRESHOLDS.HIGH_AGENCY || insights.scales.agency <= THRESHOLDS.LOW_AGENCY ? 'text-primary' : 'text-foreground'}`}>
+                      {insights.scales.agency}/10
+                      {insights.scales.agency >= THRESHOLDS.HIGH_AGENCY && <span className="ml-1 text-primary">💪</span>}
+                      {insights.scales.agency <= THRESHOLDS.LOW_AGENCY && <span className="ml-1 text-amber-600 dark:text-amber-400">⚠️</span>}
+                    </span>
+                  </div>
+                  <Progress 
+                    value={insights.scales.agency * 10}
+                    className={`${insights.scales.agency >= THRESHOLDS.HIGH_AGENCY ? 'bg-primary/20' : insights.scales.agency <= THRESHOLDS.LOW_AGENCY ? 'bg-amber-600/20 dark:bg-amber-400/20' : 'bg-muted'}`}
+                    aria-label={`Agency level: ${insights.scales.agency} out of 10`}
+                  />
                 </div>
                 
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-gray-600">Opportunity</span>
-                  <span className={`font-medium ${insights.scales.opportunity >= 8 || insights.scales.opportunity <= 3 ? 'text-indigo-700' : 'text-gray-700'}`}>
-                    {insights.scales.opportunity}/10
-                    {insights.scales.opportunity >= 8 && <span className="ml-1 text-indigo-600">🚀</span>}
-                    {insights.scales.opportunity <= 3 && <span className="ml-1 text-gray-500">💤</span>}
-                  </span>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">Difficulty</span>
+                    <span className={`font-medium ${insights.scales.difficulty >= THRESHOLDS.HIGH_DIFFICULTY || insights.scales.difficulty <= THRESHOLDS.LOW_DIFFICULTY ? 'text-primary' : 'text-foreground'}`}>
+                      {insights.scales.difficulty}/10
+                      {insights.scales.difficulty >= THRESHOLDS.HIGH_DIFFICULTY && <span className="ml-1 text-destructive">🔥</span>}
+                      {insights.scales.difficulty <= THRESHOLDS.LOW_DIFFICULTY && <span className="ml-1 text-emerald-600 dark:text-emerald-400">✅</span>}
+                    </span>
+                  </div>
+                  <Progress 
+                    value={insights.scales.difficulty * 10}
+                    className={`${insights.scales.difficulty >= THRESHOLDS.HIGH_DIFFICULTY ? 'bg-destructive/20' : insights.scales.difficulty <= THRESHOLDS.LOW_DIFFICULTY ? 'bg-emerald-600/20 dark:bg-emerald-500/20' : 'bg-muted'}`}
+                    aria-label={`Difficulty level: ${insights.scales.difficulty} out of 10`}
+                  />
                 </div>
-                <div className="h-1.5 bg-gray-200 rounded-full">
-                  <div className={`h-full rounded-full transition-all ${insights.scales.opportunity >= 8 ? 'bg-indigo-600' : insights.scales.opportunity <= 3 ? 'bg-gray-400' : 'bg-gray-400'}`} style={{ width: `${insights.scales.opportunity * 10}%` }} />
+                
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">Opportunity</span>
+                    <span className={`font-medium ${insights.scales.opportunity >= THRESHOLDS.HIGH_OPPORTUNITY || insights.scales.opportunity <= THRESHOLDS.LOW_OPPORTUNITY ? 'text-primary' : 'text-foreground'}`}>
+                      {insights.scales.opportunity}/10
+                      {insights.scales.opportunity >= THRESHOLDS.HIGH_OPPORTUNITY && <span className="ml-1 text-primary">🚀</span>}
+                      {insights.scales.opportunity <= THRESHOLDS.LOW_OPPORTUNITY && <span className="ml-1 text-muted-foreground">💤</span>}
+                    </span>
+                  </div>
+                  <Progress 
+                    value={insights.scales.opportunity * 10}
+                    className={`${insights.scales.opportunity >= THRESHOLDS.HIGH_OPPORTUNITY ? 'bg-primary/20' : 'bg-muted'}`}
+                    aria-label={`Opportunity level: ${insights.scales.opportunity} out of 10`}
+                  />
                 </div>
               </div>
               
               {/* Timing */}
-              <div className="mt-2 pt-2 border-t border-gray-200">
+              <div className="mt-4 pt-3 border-t border-border">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-600">Timing:</span>
-                  <span className={`text-xs font-medium px-2 py-0.5 rounded ${insights.scales.timing === 'immediate' ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-700'}`}>
+                  <span className="text-sm text-muted-foreground">Timing:</span>
+                  <Badge variant={insights.scales.timing === 'immediate' ? 'default' : 'secondary'}>
                     {insights.scales.timing.replace('-', ' ')}
-                  </span>
+                  </Badge>
                 </div>
               </div>
             </section>
 
             {/* Energy Balance */}
-            <section className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-              <h4 className="font-medium text-sm mb-2 text-gray-700">Energy Balance</h4>
+            <section className="bg-muted/50 rounded-lg p-4 border">
+              <h4 className="font-medium text-sm mb-3 text-foreground">Energy Balance</h4>
               
               {/* Active vs Receptive */}
-              <div className="mb-2">
-                <div className="flex justify-between text-xs mb-1 text-gray-600">
-                  <span className={activeReceptiveSum > 0 && Math.abs(insights.energyBalance.active - insights.energyBalance.receptive) >= 30 ? 'text-indigo-600 font-medium' : ''}>
+              <div className="mb-3">
+                <div className="flex justify-between text-sm mb-2 text-muted-foreground">
+                  <span className={activeReceptiveSum > 0 && Math.abs(insights.energyBalance.active - insights.energyBalance.receptive) >= 30 ? 'text-primary font-medium' : ''}>
                     Active: {insights.energyBalance.active}%
                     {insights.energyBalance.active >= 70 ? ' ⚡' : ''}
                   </span>
-                  <span className={activeReceptiveSum > 0 && Math.abs(insights.energyBalance.active - insights.energyBalance.receptive) >= 30 ? 'text-indigo-600 font-medium' : ''}>
+                  <span className={activeReceptiveSum > 0 && Math.abs(insights.energyBalance.active - insights.energyBalance.receptive) >= 30 ? 'text-primary font-medium' : ''}>
                     Receptive: {insights.energyBalance.receptive}%
                     {insights.energyBalance.receptive >= 70 ? ' 🌙' : ''}
                   </span>
                 </div>
-                <div className="flex h-2 rounded-full overflow-hidden bg-gray-200">
-                  <div className={`${insights.energyBalance.active >= 70 ? 'bg-indigo-400' : 'bg-gray-400'}`} style={{ width: `${insights.energyBalance.active}%` }} />
-                  <div className={`${insights.energyBalance.receptive >= 70 ? 'bg-indigo-600' : 'bg-gray-500'}`} style={{ width: `${insights.energyBalance.receptive}%` }} />
+                <div className="flex h-2 rounded-full overflow-hidden bg-muted" role="progressbar" aria-label={`Energy balance: ${insights.energyBalance.active}% active, ${insights.energyBalance.receptive}% receptive`}>
+                  <div className={`${insights.energyBalance.active >= THRESHOLDS.HIGH_ENERGY ? 'bg-primary/70' : 'bg-muted-foreground/50'} transition-all duration-200`} style={{ width: `${insights.energyBalance.active}%` }} />
+                  <div className={`${insights.energyBalance.receptive >= THRESHOLDS.HIGH_ENERGY ? 'bg-primary' : 'bg-muted-foreground/70'} transition-all duration-200`} style={{ width: `${insights.energyBalance.receptive}%` }} />
                 </div>
               </div>
               
               {/* Energy Areas */}
-              <div className="space-y-1">
+              <div className="space-y-2">
                 {energyAreas.map(area => (
-                  <div key={area.key} className="flex justify-between items-center text-xs">
-                    <div className="flex items-center gap-1">
-                      {area.key === 'mental' && <Brain className={`w-3 h-3 ${area.key === dominantEnergy.key ? 'text-indigo-600' : 'text-gray-500'}`} />}
-                      {area.key === 'emotional' && <Heart className={`w-3 h-3 ${area.key === dominantEnergy.key ? 'text-indigo-600' : 'text-gray-500'}`} />}
-                      {area.key === 'spiritual' && <Star className={`w-3 h-3 ${area.key === dominantEnergy.key ? 'text-indigo-600' : 'text-gray-500'}`} />}
-                      {area.key === 'material' && <Package className={`w-3 h-3 ${area.key === dominantEnergy.key ? 'text-indigo-600' : 'text-gray-500'}`} />}
-                      <span className={`capitalize ${area.key === dominantEnergy.key ? 'text-indigo-600 font-medium' : 'text-gray-600'}`}>
+                  <div key={area.key} className="flex justify-between items-center text-sm">
+                    <div className="flex items-center gap-2">
+                      {area.key === 'mental' && <Brain className={`w-4 h-4 ${area.key === dominantEnergy.key ? 'text-primary' : 'text-muted-foreground'}`} />}
+                      {area.key === 'emotional' && <Heart className={`w-4 h-4 ${area.key === dominantEnergy.key ? 'text-primary' : 'text-muted-foreground'}`} />}
+                      {area.key === 'spiritual' && <Star className={`w-4 h-4 ${area.key === dominantEnergy.key ? 'text-primary' : 'text-muted-foreground'}`} />}
+                      {area.key === 'material' && <Package className={`w-4 h-4 ${area.key === dominantEnergy.key ? 'text-primary' : 'text-muted-foreground'}`} />}
+                      <span className={`capitalize ${area.key === dominantEnergy.key ? 'text-primary font-medium' : 'text-muted-foreground'}`}>
                         {area.key}
                         {area.key === dominantEnergy.key && area.value >= 40 ? ' 👑' : ''}
                       </span>
                     </div>
-                    <span className={`font-medium ${area.key === dominantEnergy.key ? 'text-indigo-700' : 'text-gray-700'}`}>
+                    <span className={`font-medium ${area.key === dominantEnergy.key ? 'text-primary' : 'text-foreground'}`}>
                       {area.value}%
                     </span>
                   </div>
@@ -216,21 +249,21 @@ export function CopilotInsightsCard({ insights, onSendToSOAP }: Props) {
           {/* Right Column */}
           <div className="space-y-4">
             {/* Elemental Distribution */}
-            <section className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-              <h4 className="font-medium text-sm mb-2 text-gray-700">Elements</h4>
+            <section className="bg-muted/50 rounded-lg p-4 border">
+              <h4 className="font-medium text-sm mb-3 text-foreground">Elements</h4>
               
               {/* Element Bar */}
-              <div className="flex h-3 rounded-full overflow-hidden mb-2 bg-gray-200">
+              <div className="flex h-3 rounded-full overflow-hidden mb-3 bg-muted" role="progressbar" aria-label={`Elemental distribution: ${elements.map(el => `${el.key} ${el.value}%`).join(', ')}`}>
                 {elements.map(el => (
                   <div
                     key={el.key}
                     className={`
-                      ${el.key === dominantElement.key && el.value >= 40 ? 
-                        (el.key === 'fire' ? 'bg-red-500' : 
-                         el.key === 'water' ? 'bg-blue-500' : 
-                         el.key === 'air' ? 'bg-sky-400' : 'bg-green-600') :
-                        'bg-gray-400'
-                      }
+                      ${el.key === dominantElement.key && el.value >= THRESHOLDS.DOMINANT_ELEMENT ? 
+                        (el.key === 'fire' ? 'bg-red-500 dark:bg-red-400' : 
+                         el.key === 'water' ? 'bg-blue-500 dark:bg-blue-400' : 
+                         el.key === 'air' ? 'bg-sky-400 dark:bg-sky-300' : 'bg-emerald-600 dark:bg-emerald-500') :
+                        'bg-muted-foreground/50'
+                      } transition-all duration-200
                     `}
                     style={{ width: `${el.value}%` }}
                   />
@@ -238,20 +271,20 @@ export function CopilotInsightsCard({ insights, onSendToSOAP }: Props) {
               </div>
               
               {/* Element Values */}
-              <div className="grid grid-cols-2 gap-1 text-xs">
+              <div className="grid grid-cols-2 gap-2 text-sm">
                 {elements.map(el => (
                   <div key={el.key} className="flex justify-between items-center">
-                    <div className="flex items-center gap-1">
-                      {el.key === 'fire' && <Flame className={`w-3 h-3 ${el.key === dominantElement.key && el.value >= 40 ? 'text-red-500' : 'text-gray-500'}`} />}
-                      {el.key === 'water' && <Droplets className={`w-3 h-3 ${el.key === dominantElement.key && el.value >= 40 ? 'text-blue-500' : 'text-gray-500'}`} />}
-                      {el.key === 'air' && <Wind className={`w-3 h-3 ${el.key === dominantElement.key && el.value >= 40 ? 'text-sky-400' : 'text-gray-500'}`} />}
-                      {el.key === 'earth' && <Mountain className={`w-3 h-3 ${el.key === dominantElement.key && el.value >= 40 ? 'text-green-600' : 'text-gray-500'}`} />}
-                      <span className={`capitalize ${el.key === dominantElement.key && el.value >= 40 ? 'text-gray-800 font-medium' : 'text-gray-600'}`}>
+                    <div className="flex items-center gap-2">
+                      {el.key === 'fire' && <Flame className={`w-4 h-4 ${el.key === dominantElement.key && el.value >= 40 ? 'text-red-500 dark:text-red-400' : 'text-muted-foreground'}`} />}
+                      {el.key === 'water' && <Droplets className={`w-4 h-4 ${el.key === dominantElement.key && el.value >= 40 ? 'text-blue-500 dark:text-blue-400' : 'text-muted-foreground'}`} />}
+                      {el.key === 'air' && <Wind className={`w-4 h-4 ${el.key === dominantElement.key && el.value >= 40 ? 'text-sky-400 dark:text-sky-300' : 'text-muted-foreground'}`} />}
+                      {el.key === 'earth' && <Mountain className={`w-4 h-4 ${el.key === dominantElement.key && el.value >= 40 ? 'text-emerald-600 dark:text-emerald-500' : 'text-muted-foreground'}`} />}
+                      <span className={`capitalize ${el.key === dominantElement.key && el.value >= 40 ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
                         {el.key}
                         {el.key === dominantElement.key && el.value >= 40 ? ' ★' : ''}
                       </span>
                     </div>
-                    <span className={`font-medium ${el.key === dominantElement.key && el.value >= 40 ? 'text-gray-800' : 'text-gray-700'}`}>
+                    <span className={`font-medium ${el.key === dominantElement.key && el.value >= 40 ? 'text-foreground' : 'text-foreground'}`}>
                       {el.value}%
                     </span>
                   </div>
@@ -261,16 +294,16 @@ export function CopilotInsightsCard({ insights, onSendToSOAP }: Props) {
 
             {/* Archetypes */}
             {insights.archetypeIntensity.length > 0 && (
-              <section className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                <h4 className="font-medium text-sm mb-2 text-gray-700">Top Archetypes</h4>
+              <section className="bg-muted/50 rounded-lg p-4 border">
+                <h4 className="font-medium text-sm mb-3 text-foreground">Top Archetypes</h4>
                 <div className="space-y-2">
                   {insights.archetypeIntensity.slice(0, 3).map((arch, i) => (
-                    <div key={i} className="flex justify-between items-center text-xs">
-                      <span className={`${arch.intensity >= 8 ? 'text-indigo-600 font-medium' : 'text-gray-600'}`}>
+                    <div key={i} className="flex justify-between items-center text-sm">
+                      <span className={`${arch.intensity >= THRESHOLDS.HIGH_ARCHETYPE ? 'text-primary font-medium' : 'text-muted-foreground'}`}>
                         {arch.archetype}
-                        {arch.intensity >= 8 ? ' ⭐' : ''}
+                        {arch.intensity >= THRESHOLDS.HIGH_ARCHETYPE ? ' ⭐' : ''}
                       </span>
-                      <span className={`font-medium ${arch.intensity >= 8 ? 'text-indigo-700' : 'text-gray-700'}`}>
+                      <span className={`font-medium ${arch.intensity >= THRESHOLDS.HIGH_ARCHETYPE ? 'text-primary' : 'text-foreground'}`}>
                         {arch.intensity}/10
                       </span>
                     </div>
@@ -283,50 +316,68 @@ export function CopilotInsightsCard({ insights, onSendToSOAP }: Props) {
         {/* Key Insights - Compact Layout */}
         <div className="space-y-3">
           {/* Key Themes */}
-          <section className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-            <h4 className="font-medium text-sm mb-2 text-gray-700 flex items-center gap-2">
+          <section className="bg-muted/50 rounded-lg p-4 border">
+            <h4 className="font-medium text-sm mb-3 text-foreground flex items-center gap-2">
               <Lightbulb className="w-4 h-4" />
               Key Themes
             </h4>
-            <div className="space-y-1">
+            <div className="space-y-2">
               {insights.keyThemes.map((theme, i) => (
-                <div key={i} className="flex items-center justify-between bg-white rounded px-2 py-1 border border-gray-200">
-                  <span className="text-xs text-gray-700">{theme}</span>
-                  <button className="text-gray-500 hover:text-indigo-600 p-1" onClick={() => onSendToSOAP(theme)} aria-label="Send to SOAP">
+                <div key={i} className="flex items-center justify-between bg-background rounded-md px-3 py-2 border">
+                  <span className="text-sm text-foreground">{theme}</span>
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    onClick={() => onSendToSOAP(theme)} 
+                    aria-label={`Send theme "${theme}" to SOAP`}
+                    className="h-6 w-6 p-0"
+                  >
                     <Send className="w-3 h-3" />
-                  </button>
+                  </Button>
                 </div>
               ))}
             </div>
           </section>
           
           {/* Potential Narrative */}
-          <section className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-            <h4 className="font-medium text-sm mb-2 text-gray-700 flex items-center gap-2">
+          <section className="bg-muted/50 rounded-lg p-4 border">
+            <h4 className="font-medium text-sm mb-3 text-foreground flex items-center gap-2">
               <BookOpen className="w-4 h-4" />
               Potential Narrative
             </h4>
-            <div className="flex items-center justify-between bg-white rounded px-2 py-2 border border-gray-200">
-              <span className="text-xs text-gray-700">{insights.potentialNarrative}</span>
-              <button className="text-gray-500 hover:text-indigo-600 p-1" onClick={() => onSendToSOAP(insights.potentialNarrative)} aria-label="Send to SOAP">
+            <div className="flex items-center justify-between bg-background rounded-md px-3 py-2 border">
+              <span className="text-sm text-foreground">{insights.potentialNarrative}</span>
+              <Button 
+                size="sm" 
+                variant="ghost" 
+                onClick={() => onSendToSOAP(insights.potentialNarrative)} 
+                aria-label={`Send narrative "${insights.potentialNarrative}" to SOAP`}
+                className="h-6 w-6 p-0"
+              >
                 <Send className="w-3 h-3" />
-              </button>
+              </Button>
             </div>
           </section>
           
           {/* Questions to Ask */}
-          <section className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-            <h4 className="font-medium text-sm mb-2 text-gray-700 flex items-center gap-2">
+          <section className="bg-muted/50 rounded-lg p-4 border">
+            <h4 className="font-medium text-sm mb-3 text-foreground flex items-center gap-2">
               <HelpCircle className="w-4 h-4" />
               Questions to Ask
             </h4>
-            <div className="space-y-1">
+            <div className="space-y-2">
               {insights.questionsToAsk.map((q, i) => (
-                <div key={i} className="flex items-center justify-between bg-white rounded px-2 py-1 border border-gray-200">
-                  <span className="text-xs text-gray-700">{q}</span>
-                  <button className="text-gray-500 hover:text-indigo-600 p-1" onClick={() => onSendToSOAP(q)} aria-label="Send to SOAP">
+                <div key={i} className="flex items-center justify-between bg-background rounded-md px-3 py-2 border">
+                  <span className="text-sm text-foreground">{q}</span>
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    onClick={() => onSendToSOAP(q)} 
+                    aria-label={`Send question "${q}" to SOAP`}
+                    className="h-6 w-6 p-0"
+                  >
                     <Send className="w-3 h-3" />
-                  </button>
+                  </Button>
                 </div>
               ))}
             </div>
@@ -337,18 +388,24 @@ export function CopilotInsightsCard({ insights, onSendToSOAP }: Props) {
           <div className="grid grid-cols-1 gap-3">
             {/* Action Points */}
             {insights.actionPoints && insights.actionPoints.length > 0 && (
-              <section className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                <h4 className="font-medium text-sm mb-2 text-gray-700 flex items-center gap-2">
+              <section className="bg-muted/50 rounded-lg p-4 border">
+                <h4 className="font-medium text-sm mb-3 text-foreground flex items-center gap-2">
                   <CheckCircle className="w-4 h-4" />
                   Action Points
                 </h4>
-                <div className="space-y-1">
+                <div className="space-y-2">
                   {insights.actionPoints.map((action, i) => (
-                    <div key={i} className="flex items-center justify-between bg-white rounded px-2 py-1 border border-gray-200">
-                      <span className="text-xs text-gray-700">{action}</span>
-                      <button className="text-gray-500 hover:text-indigo-600 p-1" onClick={() => onSendToSOAP(action)} aria-label="Send to SOAP">
+                    <div key={i} className="flex items-center justify-between bg-background rounded-md px-3 py-2 border">
+                      <span className="text-sm text-foreground">{action}</span>
+                      <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        onClick={() => onSendToSOAP(action)} 
+                        aria-label={`Send action "${action}" to SOAP`}
+                        className="h-6 w-6 p-0"
+                      >
                         <Send className="w-3 h-3" />
-                      </button>
+                      </Button>
                     </div>
                   ))}
                 </div>
@@ -357,23 +414,29 @@ export function CopilotInsightsCard({ insights, onSendToSOAP }: Props) {
 
             {/* Warning Signals */}
             {insights.warningSignals && insights.warningSignals.length > 0 && (
-              <section className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                <h4 className="font-medium text-sm mb-2 text-gray-700 flex items-center gap-2">
+              <section className="bg-muted/50 rounded-lg p-4 border">
+                <h4 className="font-medium text-sm mb-3 text-foreground flex items-center gap-2">
                   <AlertTriangle className="w-4 h-4" />
                   Warning Signals
                 </h4>
-                <div className="space-y-1">
+                <div className="space-y-2">
                   {insights.warningSignals.map((warning, i) => (
-                    <div key={i} className="flex items-center justify-between bg-white rounded px-2 py-1 border border-gray-200">
+                    <div key={i} className="flex items-center justify-between bg-background rounded-md px-3 py-2 border">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs text-gray-700">{warning.signal}</span>
-                        <span className={`text-xs px-1 rounded text-white ${warning.severity >= 8 ? 'bg-red-500' : warning.severity >= 6 ? 'bg-orange-500' : 'bg-yellow-500'}`}>
+                        <span className="text-sm text-foreground">{warning.signal}</span>
+                        <Badge variant={getSeverityVariant(warning.severity)}>
                           {warning.severity}/10
-                        </span>
+                        </Badge>
                       </div>
-                      <button className="text-gray-500 hover:text-indigo-600 p-1" onClick={() => onSendToSOAP(warning.signal)} aria-label="Send to SOAP">
+                      <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        onClick={() => onSendToSOAP(warning.signal)} 
+                        aria-label={`Send warning "${warning.signal}" to SOAP`}
+                        className="h-6 w-6 p-0"
+                      >
                         <Send className="w-3 h-3" />
-                      </button>
+                      </Button>
                     </div>
                   ))}
                 </div>
@@ -383,16 +446,22 @@ export function CopilotInsightsCard({ insights, onSendToSOAP }: Props) {
         )}
 
         {/* Send All Button */}
-        <div className="pt-2 border-t border-gray-200">
-          <button className="inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium transition-colors bg-indigo-100 text-indigo-700 hover:bg-indigo-200 h-8 px-4 w-full" onClick={() => onSendToSOAP([
-            ...insights.keyThemes,
-            insights.potentialNarrative,
-            ...insights.questionsToAsk,
-            ...(insights.actionPoints || []),
-          ])} aria-label="Send all to SOAP">
+        <div className="pt-4 border-t border-border">
+          <Button 
+            variant="default" 
+            size="sm" 
+            className="w-full" 
+            onClick={() => onSendToSOAP([
+              ...insights.keyThemes,
+              insights.potentialNarrative,
+              ...insights.questionsToAsk,
+              ...(insights.actionPoints || []),
+            ])} 
+            aria-label="Send all insights to SOAP notes"
+          >
             <Sparkles className="w-4 h-4" />
             Send All to SOAP
-          </button>
+          </Button>
         </div>
       </CardContent>
     </Card>
