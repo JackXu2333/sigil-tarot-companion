@@ -40,7 +40,7 @@ const App = () => {
             <Route path="/client/new" element={<NewClientForm />} />
             <Route path="/client/:id" element={<ClientChart />} />
             <Route path="/reading/:id" element={<ReadingWorkspace />} />
-            <Route path="/reading/new" element={<ReadingWorkspace />} />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
