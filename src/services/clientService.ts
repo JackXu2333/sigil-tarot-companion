@@ -1,26 +1,32 @@
 import { supabase } from "@/integrations/supabase/client";
 import { getDemoMode } from "@/lib/demoMode";
-import { sampleClients, clientData } from "@/data/mockData";
+import { 
+  sampleClients, 
+  clientData, 
+  clientMBTIData, 
+  clientAttachmentData, 
+  clientAbilitiesData 
+} from "@/data/mockData";
 
 export interface Client {
   id: string;
   user_id: string;
   name: string;
-  pronouns?: string;
-  how_we_met?: string;
-  current_vibe?: string;
-  relationship_goal?: string;
-  work_industry?: string;
-  spiritual_beliefs?: string;
-  communication_style?: string;
-  core_value?: string;
-  birth_day?: string;
-  ethnicity?: string;
-  client_since?: string;
-  reader_notes?: string;
-  avatar?: string;
-  tags?: string[];
-  last_contact?: string;
+  pronouns: string | null;
+  how_we_met: string | null;
+  current_vibe: string | null;
+  relationship_goal: string | null;
+  work_industry: string | null;
+  spiritual_beliefs: string | null;
+  communication_style: string | null;
+  core_value: string | null;
+  birth_day: string | null;
+  ethnicity: string | null;
+  client_since: string | null;
+  reader_notes: string | null;
+  avatar: string | null;
+  tags: string[] | null;
+  last_contact: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -28,29 +34,35 @@ export interface Client {
 export interface ClientMBTI {
   id: string;
   client_id: string;
-  mbti_type?: string;
-  ie_score?: number;
-  ns_score?: number;
-  ft_score?: number;
-  jp_score?: number;
+  mbti_type: string | null;
+  ie_score: number | null;
+  ns_score: number | null;
+  ft_score: number | null;
+  jp_score: number | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface ClientAttachment {
   id: string;
   client_id: string;
-  anxiety_score?: number;
-  avoidance_score?: number;
+  anxiety_score: number | null;
+  avoidance_score: number | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface ClientAbilities {
   id: string;
   client_id: string;
-  intuition?: number;
-  empathy?: number;
-  ambition?: number;
-  intellect?: number;
-  creativity?: number;
-  self_awareness?: number;
+  intuition: number | null;
+  empathy: number | null;
+  ambition: number | null;
+  intellect: number | null;
+  creativity: number | null;
+  self_awareness: number | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface FullClient extends Client {
@@ -84,12 +96,19 @@ export const clientService = {
     if (getDemoMode()) {
       const client = clientData[Number(id) as keyof typeof clientData];
       if (client) {
+        const mbti = clientMBTIData[Number(id) as keyof typeof clientMBTIData] || undefined;
+        const attachment = clientAttachmentData[Number(id) as keyof typeof clientAttachmentData] || undefined;
+        const abilities = clientAbilitiesData[Number(id) as keyof typeof clientAbilitiesData] || undefined;
+        
         return Promise.resolve({
           ...client,
           id: String(client.id),
           user_id: "demo-user",
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
+          mbti,
+          attachment,
+          abilities,
         } as FullClient);
       }
       return Promise.resolve(null);
@@ -189,9 +208,11 @@ export const clientService = {
     mbtiData: Partial<ClientMBTI>
   ): Promise<ClientMBTI> {
     if (getDemoMode()) {
+      const existingMbti = clientMBTIData[Number(clientId) as keyof typeof clientMBTIData];
       return Promise.resolve({
+        ...existingMbti,
         ...mbtiData,
-        id: "demo-mbti",
+        id: existingMbti?.id || "demo-mbti-" + clientId,
         client_id: clientId,
       } as ClientMBTI);
     }
@@ -213,9 +234,11 @@ export const clientService = {
     attachmentData: Partial<ClientAttachment>
   ): Promise<ClientAttachment> {
     if (getDemoMode()) {
+      const existingAttachment = clientAttachmentData[Number(clientId) as keyof typeof clientAttachmentData];
       return Promise.resolve({
+        ...existingAttachment,
         ...attachmentData,
-        id: "demo-attachment",
+        id: existingAttachment?.id || "demo-attachment-" + clientId,
         client_id: clientId,
       } as ClientAttachment);
     }
@@ -237,9 +260,11 @@ export const clientService = {
     abilitiesData: Partial<ClientAbilities>
   ): Promise<ClientAbilities> {
     if (getDemoMode()) {
+      const existingAbilities = clientAbilitiesData[Number(clientId) as keyof typeof clientAbilitiesData];
       return Promise.resolve({
+        ...existingAbilities,
         ...abilitiesData,
-        id: "demo-abilities",
+        id: existingAbilities?.id || "demo-abilities-" + clientId,
         client_id: clientId,
       } as ClientAbilities);
     }

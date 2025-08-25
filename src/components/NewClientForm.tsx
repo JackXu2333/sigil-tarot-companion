@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useForm, useController, type Control, FormProvider } from "react-hook-form";
+import { useForm, type Control } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -21,6 +21,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -66,7 +74,7 @@ const formSchema = z.object({
 
 type FormSchemaType = z.infer<typeof formSchema>;
 
-// Reusable Slider Field Component using native range input
+// Reusable Slider Field Component using FormField pattern
 const SliderField = ({
   control,
   name,
@@ -82,30 +90,39 @@ const SliderField = ({
   max: number;
   step: number;
 }) => {
-  const { field } = useController({ name, control });
-  const value = field.value as number ?? (min + max) / 2;
-
   return (
-    <div className="space-y-2">
-      <Label className="text-sm font-medium leading-none">{label}</Label>
-      <div className="flex items-center gap-4">
-        <Slider
-          value={[value]}
-          onValueChange={(values) => field.onChange(values[0])}
-          min={min}
-          max={max}
-          step={step}
-          className="flex-1"
-        />
-        <span className="w-10 text-right font-mono text-foreground">
-          {value}
-        </span>
-      </div>
-    </div>
+    <FormField
+      control={control}
+      name={name}
+      render={({ field }) => {
+        const value = field.value as number ?? (min + max) / 2;
+        return (
+          <FormItem>
+            <FormLabel>{label}</FormLabel>
+            <FormControl>
+              <div className="flex items-center gap-4">
+                <Slider
+                  value={[value]}
+                  onValueChange={(values) => field.onChange(values[0])}
+                  min={min}
+                  max={max}
+                  step={step}
+                  className="flex-1"
+                />
+                <span className="w-10 text-right font-mono text-foreground">
+                  {value}
+                </span>
+              </div>
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        );
+      }}
+    />
   );
 };
 
-// Reusable Bipolar Slider Field Component using native range input
+// Reusable Bipolar Slider Field Component using FormField pattern
 const BipolarSliderField = ({
   control,
   name,
@@ -123,29 +140,38 @@ const BipolarSliderField = ({
   min?: number;
   max?: number;
 }) => {
-  const { field } = useController({ name, control });
-  const value = field.value as number ?? (min + max) / 2;
-
   return (
-    <div className="space-y-2">
-      <Label className="text-sm font-medium leading-none">{label}</Label>
-      <div className="flex items-center gap-2">
-        <span className="text-xs text-muted-foreground w-4 text-left">{leftLabel}</span>
-        <Slider
-          value={[value]}
-          onValueChange={(values) => field.onChange(values[0])}
-          min={min}
-          max={max}
-          step={1}
-          className="flex-1"
-        />
-        <span className="text-xs text-muted-foreground w-4 text-right">{rightLabel}</span>
-      </div>
-    </div>
+    <FormField
+      control={control}
+      name={name}
+      render={({ field }) => {
+        const value = field.value as number ?? (min + max) / 2;
+        return (
+          <FormItem>
+            <FormLabel>{label}</FormLabel>
+            <FormControl>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground w-4 text-left">{leftLabel}</span>
+                <Slider
+                  value={[value]}
+                  onValueChange={(values) => field.onChange(values[0])}
+                  min={min}
+                  max={max}
+                  step={1}
+                  className="flex-1"
+                />
+                <span className="text-xs text-muted-foreground w-4 text-right">{rightLabel}</span>
+              </div>
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        );
+      }}
+    />
   );
 };
 
-// Improved SelectField with Tailwind and placeholder fix
+// Improved SelectField using FormField pattern
 const SelectField = ({
   control,
   name,
@@ -159,23 +185,31 @@ const SelectField = ({
   placeholder: string;
   options: string[];
 }) => {
-  const { field } = useController({ name, control });
   return (
-    <div className="space-y-2">
-      <Label className="text-sm font-medium leading-none">{label}</Label>
-      <Select value={field.value != null ? String(field.value) : ""} onValueChange={field.onChange}>
-        <SelectTrigger>
-          <SelectValue placeholder={placeholder} />
-        </SelectTrigger>
-        <SelectContent>
-          {options.map((option) => (
-            <SelectItem key={option} value={option}>
-              {option}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
+    <FormField
+      control={control}
+      name={name}
+      render={({ field }) => (
+        <FormItem>
+          <FormLabel>{label}</FormLabel>
+          <Select value={field.value != null ? String(field.value) : ""} onValueChange={field.onChange}>
+            <FormControl>
+              <SelectTrigger>
+                <SelectValue placeholder={placeholder} />
+              </SelectTrigger>
+            </FormControl>
+            <SelectContent>
+              {options.map((option) => (
+                <SelectItem key={option} value={option}>
+                  {option}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
   );
 };
 
@@ -245,6 +279,9 @@ export default function NewClientForm() {
     if (value.length >= 4) setValue("mbtiJp", value[3] === "P" ? 0 : 100);
   };
 
+  // Utility function to convert undefined to null for database consistency
+  const toNull = (value: string | undefined): string | null => value || null;
+  
   async function onSubmit(values: FormSchemaType) {
     setIsSubmitting(true);
     try {
@@ -265,42 +302,46 @@ export default function NewClientForm() {
 
       const newClient = await clientService.createClient({
         name,
-        pronouns,
-        how_we_met: howWeMet,
-        birth_day: birthDay,
-        ethnicity,
-        current_vibe: currentVibe,
-        relationship_goal: relationshipGoal,
-        work_industry: workIndustry,
-        spiritual_beliefs: spiritualBeliefs,
-        communication_style: communicationStyle,
-        core_value: coreValue,
-        reader_notes: readerNotes,
+        pronouns: toNull(pronouns),
+        how_we_met: toNull(howWeMet),
+        birth_day: toNull(birthDay),
+        ethnicity: toNull(ethnicity),
+        current_vibe: toNull(currentVibe),
+        relationship_goal: toNull(relationshipGoal),
+        work_industry: toNull(workIndustry),
+        spiritual_beliefs: toNull(spiritualBeliefs),
+        communication_style: toNull(communicationStyle),
+        core_value: toNull(coreValue),
+        reader_notes: toNull(readerNotes),
+        avatar: null,
+        tags: null,
+        last_contact: null,
+        client_since: null,
       });
 
       if (newClient && newClient.id) {
         if (showPersonality) {
           await clientService.updateClientMBTI(newClient.id, {
-            mbti_type: values.mbtiType,
-            ie_score: values.mbtiIe,
-            ns_score: values.mbtiNs,
-            ft_score: values.mbtiFt,
-            jp_score: values.mbtiJp,
+            mbti_type: toNull(values.mbtiType),
+            ie_score: values.mbtiIe ?? null,
+            ns_score: values.mbtiNs ?? null,
+            ft_score: values.mbtiFt ?? null,
+            jp_score: values.mbtiJp ?? null,
           });
           await clientService.updateClientAttachment(newClient.id, {
-            anxiety_score: values.attachmentAnxiety,
-            avoidance_score: values.attachmentAvoidance,
+            anxiety_score: values.attachmentAnxiety ?? null,
+            avoidance_score: values.attachmentAvoidance ?? null,
           });
         }
 
         if (showAbilities) {
           await clientService.updateClientAbilities(newClient.id, {
-            intuition: values.abilityIntuition,
-            empathy: values.abilityEmpathy,
-            ambition: values.abilityAmbition,
-            intellect: values.abilityIntellect,
-            creativity: values.abilityCreativity,
-            self_awareness: values.abilitySelfAwareness,
+            intuition: values.abilityIntuition ?? null,
+            empathy: values.abilityEmpathy ?? null,
+            ambition: values.abilityAmbition ?? null,
+            intellect: values.abilityIntellect ?? null,
+            creativity: values.abilityCreativity ?? null,
+            self_awareness: values.abilitySelfAwareness ?? null,
           });
         }
       }
@@ -336,23 +377,28 @@ export default function NewClientForm() {
         </CardHeader>
 
         <CardContent>
-        <FormProvider {...form}>
+        <Form {...form}>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-10">
             {/* Basic Info */}
             <section>
               <h2 className="text-lg font-semibold text-primary mb-4 border-l-4 border-primary pl-2">Basic Information</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="name" className="text-sm font-medium">Full Name <span className="text-destructive">*</span></Label>
-                  <Input
-                    {...form.register("name")}
-                    id="name"
-                    placeholder="e.g., Luna Blackwood"
-                  />
-                  {form.formState.errors.name && (
-                    <p className="text-xs text-destructive">{form.formState.errors.name.message}</p>
+                <FormField
+                  control={control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Full Name <span className="text-destructive">*</span></FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="e.g., Luna Blackwood"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
                   )}
-                </div>
+                />
                 <SelectField
                   control={control}
                   name="pronouns"
@@ -360,14 +406,22 @@ export default function NewClientForm() {
                   placeholder="Select pronouns"
                   options={pronounOptions}
                 />
-                <div className="space-y-2">
-                  <Label htmlFor="birthDay" className="text-sm font-medium">Birthday</Label>
-                  <Input
-                    type="date"
-                    {...form.register("birthDay")}
-                    id="birthDay"
-                  />
-                </div>
+                <FormField
+                  control={control}
+                  name="birthDay"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Birthday</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="date"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 <SelectField
                   control={control}
                   name="ethnicity"
@@ -396,14 +450,22 @@ export default function NewClientForm() {
             <section>
               <h2 className="text-lg font-semibold text-primary mb-4 border-l-4 border-primary pl-2">Vitals</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="currentVibe" className="text-sm font-medium">Current Life Vibe</Label>
-                  <Input
-                    {...form.register("currentVibe")}
-                    id="currentVibe"
-                    placeholder="e.g., Building My Empire"
-                  />
-                </div>
+                <FormField
+                  control={control}
+                  name="currentVibe"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Current Life Vibe</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="e.g., Building My Empire"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 <SelectField
                   control={control}
                   name="relationshipGoal"
@@ -452,16 +514,27 @@ export default function NewClientForm() {
               </div>
               {showPersonality && (
                 <div className="space-y-6 bg-muted rounded-lg p-4 border">
-                  <div className="space-y-2">
-                    <Label htmlFor="mbtiType" className="text-sm font-medium">MBTI Type</Label>
-                    <Input
-                      {...form.register("mbtiType")}
-                      id="mbtiType"
-                      placeholder="e.g., INFJ"
-                      onChange={handleMbtiTypeChange}
-                      maxLength={4}
-                    />
-                  </div>
+                  <FormField
+                    control={control}
+                    name="mbtiType"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>MBTI Type</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="e.g., INFJ"
+                            {...field}
+                            onChange={(e) => {
+                              field.onChange(e);
+                              handleMbtiTypeChange(e);
+                            }}
+                            maxLength={4}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <BipolarSliderField
                       control={control}
@@ -597,16 +670,25 @@ export default function NewClientForm() {
             {/* Reader's Notes */}
             <section>
               <h2 className="text-lg font-semibold text-primary mb-4 border-l-4 border-primary pl-2">Reader's Notes</h2>
-              <div className="space-y-2">
-                <Textarea
-                  {...form.register("readerNotes")}
-                  placeholder="Private insights about this client..."
-                  className="min-h-[100px] resize-none"
-                />
-                <p className="text-xs text-muted-foreground">
-                  These notes are for your eyes only.
-                </p>
-              </div>
+              <FormField
+                control={control}
+                name="readerNotes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Private insights about this client..."
+                        className="min-h-[100px] resize-none"
+                        {...field}
+                      />
+                    </FormControl>
+                    <p className="text-xs text-muted-foreground">
+                      These notes are for your eyes only.
+                    </p>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </section>
 
             {/* Submit Button */}
@@ -619,7 +701,7 @@ export default function NewClientForm() {
               </Button>
             </div>
           </form>
-        </FormProvider>
+        </Form>
         </CardContent>
       </Card>
     </div>

@@ -75,13 +75,13 @@ export interface Reading {
   id: string;
   client_id: string;
   user_id: string;
-  reading_type: string;
-  question?: string;
-  cards?: string[];
-  subjective?: string;
-  assessment?: string;
-  plan?: string;
-  content?: string;
+  reading_type: string | null;
+  question: string | null;
+  cards: string[] | null;
+  subjective: string | null;
+  assessment: string | null;
+  plan: string | null;
+  content: string | null;
   insights?: CopilotInsights; // Canonical insights field
   reading_date: string;
   created_at: string;
