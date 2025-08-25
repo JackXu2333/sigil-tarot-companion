@@ -32,6 +32,8 @@ import {
   ethnicityOptions
 } from "@/data/formOptions";
 
+import { cn, typography } from "@/lib/utils";
+
 // Bipolar Slider component using native range input
 const BipolarSlider = ({ value, onChange, leftLabel, rightLabel, label, min = 0, max = 100, step = 1 }: {
     value?: number;
@@ -44,9 +46,9 @@ const BipolarSlider = ({ value, onChange, leftLabel, rightLabel, label, min = 0,
     step?: number;
 }) => (
     <div className="space-y-2">
-        {label && <Label className="text-sm font-medium">{label}</Label>}
+        {label && <Label className={cn("font-medium", typography.label.default)}>{label}</Label>}
         <div className="flex items-center space-x-2">
-            <span className="text-xs text-muted-foreground w-20 text-left">{leftLabel}</span>
+            <span className={cn("text-muted-foreground w-20 text-left", typography.chart.label)}>{leftLabel}</span>
             <Slider
                 value={[value || 0]}
                 onValueChange={(values) => onChange(values[0])}
@@ -55,9 +57,9 @@ const BipolarSlider = ({ value, onChange, leftLabel, rightLabel, label, min = 0,
                 step={step}
                 className="flex-1"
             />
-            <span className="text-xs text-muted-foreground w-20 text-right">{rightLabel}</span>
+            <span className={cn("text-muted-foreground w-20 text-right", typography.chart.label)}>{rightLabel}</span>
         </div>
-        <div className="text-center text-xs text-muted-foreground">{value}</div>
+        <div className={cn("text-center text-muted-foreground", typography.chart.value)}>{value}</div>
     </div>
 );
 

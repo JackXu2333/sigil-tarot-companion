@@ -20,7 +20,7 @@ import { useDebounce } from "@/hooks/use-debounce";
 import { clientService, type Client } from "@/services/clientService";
 import { readingService, type Reading } from "@/services/readingService";
 
-import { cn } from "@/lib/utils";
+import { cn, typography } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -55,17 +55,44 @@ const ClientsTab = ({
   loading: boolean;
 }) => {
   const [inputValue, setInputValue] = useState("");
+  const [activeTagFilters, setActiveTagFilters] = useState<string[]>([]);
   const debouncedSearchTerm = useDebounce(inputValue, 300);
   const navigate = useNavigate();
 
-  const filteredClients = clients.filter(
-    (client) =>
+  // Available filter tags
+  const availableTags = [
+    "Seeking Connection",
+    "Career Transition", 
+    "Spiritual Growth"
+  ];
+
+  const toggleTagFilter = (tag: string) => {
+    setActiveTagFilters(prev => 
+      prev.includes(tag) 
+        ? prev.filter(t => t !== tag)
+        : [...prev, tag]
+    );
+  };
+
+  const filteredClients = clients.filter((client) => {
+    // First filter by search term
+    const matchesSearch = 
       client.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
       (client.tags &&
         client.tags.some((tag) =>
           tag.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
-        ))
-  );
+        ));
+
+    // Then filter by active tag filters (if any are selected)
+    const matchesTags = activeTagFilters.length === 0 || 
+      (client.tags && activeTagFilters.some(filterTag => 
+        client.tags?.some(clientTag => 
+          clientTag.toLowerCase().includes(filterTag.toLowerCase())
+        )
+      ));
+
+    return matchesSearch && matchesTags;
+  });
 
   return (
     <div className="space-y-4">
@@ -82,15 +109,28 @@ const ClientsTab = ({
         </div>
 
         <div className="flex flex-wrap gap-2">
-          <Badge variant="secondary" className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors">
-            Seeking Connection
-          </Badge>
-          <Badge variant="secondary" className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors">
-            Career Transition
-          </Badge>
-          <Badge variant="secondary" className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors">
-            Spiritual Growth
-          </Badge>
+          {availableTags.map(tag => (
+            <Badge
+              key={tag}
+              variant={activeTagFilters.includes(tag) ? "default" : "secondary"}
+              className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
+              onClick={() => toggleTagFilter(tag)}
+            >
+              {tag}
+              {activeTagFilters.includes(tag) && (
+                <span className="ml-1 text-xs">✓</span>
+              )}
+            </Badge>
+          ))}
+          {activeTagFilters.length > 0 && (
+            <Badge
+              variant="outline"
+              className="cursor-pointer hover:bg-destructive hover:text-destructive-foreground transition-colors"
+              onClick={() => setActiveTagFilters([])}
+            >
+              Clear filters
+            </Badge>
+          )}
         </div>
       </div>
 
@@ -155,9 +195,11 @@ const ClientsTab = ({
 const ActivityTab = ({
   activities,
   loading,
+  clients,
 }: {
   activities: Reading[];
   loading: boolean;
+  clients: Client[];
 }) => (
   <div className="space-y-2">
     {loading ? (
@@ -169,31 +211,49 @@ const ActivityTab = ({
         <p className="text-muted-foreground">No recent activity.</p>
       </div>
     ) : (
-      activities.map((activity) => (
-        <Card key={activity.id}>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-4">
-              <div className="p-2 rounded-full bg-primary/20">
-                {activity.reading_type === "reading" ? (
-                  <BookOpen className="w-5 h-5 text-primary" />
-                ) : (
-                  <MessageSquare className="w-5 h-5 text-primary" />
-                )}
+      activities.map((activity) => {
+        const client = clients.find(c => c.id === activity.client_id);
+        return (
+          <Card key={activity.id} className="cursor-pointer hover:shadow-md transition-shadow">
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-3">
+                  <Avatar className="w-8 h-8">
+                    <AvatarFallback className="bg-primary text-primary-foreground font-semibold text-xs">
+                      {client?.avatar || client?.name.substring(0, 2).toUpperCase() || "?"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="p-2 rounded-full bg-primary/20">
+                    {activity.reading_type === "reading" ? (
+                      <BookOpen className="w-4 h-4 text-primary" />
+                    ) : (
+                      <MessageSquare className="w-4 h-4 text-primary" />
+                    )}
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center space-x-2 mb-1">
+                    <p className="text-sm text-foreground font-medium">
+                      {client?.name || "Unknown Client"}
+                    </p>
+                    <Badge variant="outline" className="text-xs">
+                      {activity.reading_type || "reading"}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-1">
+                    {activity.question || "Note added"}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {formatDistanceToNow(new Date(activity.created_at), {
+                      addSuffix: true,
+                    })}
+                  </p>
+                </div>
               </div>
-              <div className="flex-1">
-                <p className="text-sm text-foreground font-medium">
-                  {activity.question || "Note added"}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {formatDistanceToNow(new Date(activity.created_at), {
-                    addSuffix: true,
-                  })}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      ))
+            </CardContent>
+          </Card>
+        );
+      })
     )}
   </div>
 );
@@ -230,7 +290,7 @@ const ReadTab = ({ clients }: { clients: Client[] }) => {
           <Button
             className="w-full"
             size="lg"
-            onClick={() => navigate("/reading/new", { state: { from: "/#read" } })}
+            onClick={() => navigate("/reading/new", { state: { from: "/#read", copilotEnabled } })}
           >
             <BookOpen className="w-4 h-4 mr-2" />
             New Reading without Client
@@ -239,14 +299,14 @@ const ReadTab = ({ clients }: { clients: Client[] }) => {
       </Card>
 
       <div className="space-y-2">
-        <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+        <h4 className={cn("text-muted-foreground uppercase tracking-wider", typography.label.small)}>
           Quick Select
         </h4>
         {clients.slice(0, 3).map((client) => (
           <Card
             key={client.id}
             className="cursor-pointer hover:shadow-md transition-shadow"
-            onClick={() => navigate(`/reading/${client.id}`, { state: { from: "/#read" } })}
+            onClick={() => navigate(`/reading/${client.id}`, { state: { from: "/#read", copilotEnabled } })}
           >
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
@@ -292,7 +352,7 @@ export default function Dashboard() {
 
   const loadClients = async () => {
     try {
-      const clientsData = await clientService.getClients();
+      const clientsData = await clientService.getClientsWithCalculatedLastContact();
       setClients(clientsData);
     } catch (error) {
       toast.error("Failed to load clients");
@@ -350,7 +410,7 @@ export default function Dashboard() {
       {...props}
     >
       <Icon className={cn("w-5 h-5", isActive && "text-primary")} />
-      <span className="text-xs font-medium">{label}</span>
+      <span className={cn("font-medium", typography.interactive.badge)}>{label}</span>
     </button>
   ));
   TabButton.displayName = "TabButton";
@@ -417,7 +477,7 @@ export default function Dashboard() {
           <ClientsTab clients={clients} loading={loading} />
         )}
         {activeTab === "activity" && (
-          <ActivityTab activities={readings} loading={loadingReadings} />
+          <ActivityTab activities={readings} loading={loadingReadings} clients={clients} />
         )}
         {activeTab === "read" && <ReadTab clients={clients} />}
       </div>

@@ -167,6 +167,20 @@ export const readingService = {
       .single();
 
     if (error) throw error;
+
+    // Update the client's last contact automatically
+    if (data && readingData.client_id) {
+      // Import clientService to update last contact
+      // Note: We'll need to import this at the top of the file
+      const { clientService } = await import("./clientService");
+      try {
+        await clientService.updateLastContact(readingData.client_id);
+      } catch (contactUpdateError) {
+        // Log but don't fail the reading creation if contact update fails
+        console.warn("Failed to update client last contact:", contactUpdateError);
+      }
+    }
+
     return data;
   },
 

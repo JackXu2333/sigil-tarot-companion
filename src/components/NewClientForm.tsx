@@ -41,6 +41,8 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 
+import { cn, typography } from "@/lib/utils";
+
 // Zod schema for form validation
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -109,7 +111,7 @@ const SliderField = ({
                   step={step}
                   className="flex-1"
                 />
-                <span className="w-10 text-right font-mono text-foreground">
+                <span className={cn("w-10 text-right text-foreground", typography.chart.value)}>
                   {value}
                 </span>
               </div>
@@ -151,7 +153,7 @@ const BipolarSliderField = ({
             <FormLabel>{label}</FormLabel>
             <FormControl>
               <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground w-4 text-left">{leftLabel}</span>
+                <span className={cn("text-muted-foreground w-4 text-left", typography.chart.label)}>{leftLabel}</span>
                 <Slider
                   value={[value]}
                   onValueChange={(values) => field.onChange(values[0])}
@@ -160,7 +162,7 @@ const BipolarSliderField = ({
                   step={1}
                   className="flex-1"
                 />
-                <span className="text-xs text-muted-foreground w-4 text-right">{rightLabel}</span>
+                <span className={cn("text-muted-foreground w-4 text-right", typography.chart.label)}>{rightLabel}</span>
               </div>
             </FormControl>
             <FormMessage />
@@ -370,7 +372,7 @@ export default function NewClientForm() {
           </Button>
           <div>
             <h1 className="text-2xl font-bold text-foreground">Add a New Client</h1>
-            <p className="text-muted-foreground text-sm">
+            <p className={cn("text-muted-foreground", typography.body.default)}>
               Create a new client profile to begin tracking your readings and insights.
             </p>
           </div>
@@ -381,7 +383,7 @@ export default function NewClientForm() {
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-10">
             {/* Basic Info */}
             <section>
-              <h2 className="text-lg font-semibold text-primary mb-4 border-l-4 border-primary pl-2">Basic Information</h2>
+              <h2 className={cn("text-primary mb-4 border-l-4 border-primary pl-2", typography.display.h2)}>Basic Information</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField
                   control={control}
@@ -448,7 +450,7 @@ export default function NewClientForm() {
 
             {/* Vitals */}
             <section>
-              <h2 className="text-lg font-semibold text-primary mb-4 border-l-4 border-primary pl-2">Vitals</h2>
+              <h2 className={cn("text-primary mb-4 border-l-4 border-primary pl-2", typography.display.h2)}>Vitals</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField
                   control={control}
@@ -494,13 +496,15 @@ export default function NewClientForm() {
                   placeholder="Select core value"
                   options={coreValueOptions}
                 />
+                {/* Empty div to balance the grid when odd number of fields */}
+                <div className="md:block hidden"></div>
               </div>
             </section>
 
             {/* Personality Profile */}
             <section>
               <div className="flex items-center justify-between mb-2">
-                <h2 className="text-lg font-semibold text-primary border-l-4 border-primary pl-2">Personality Profile</h2>
+                <h2 className={cn("text-primary border-l-4 border-primary pl-2", typography.display.h2)}>Personality Profile</h2>
                 <div className="flex items-center gap-2">
                   <Checkbox
                     id="personality-toggle"
@@ -535,7 +539,7 @@ export default function NewClientForm() {
                       </FormItem>
                     )}
                   />
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <BipolarSliderField
                       control={control}
                       name="mbtiIe"
@@ -574,7 +578,7 @@ export default function NewClientForm() {
                     />
                   </div>
                   <h3 className="font-semibold pt-4">Attachment Style</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <BipolarSliderField
                       control={control}
                       name="attachmentAnxiety"
@@ -601,7 +605,7 @@ export default function NewClientForm() {
             {/* Ability Scores */}
             <section>
               <div className="flex items-center justify-between mb-2">
-                <h2 className="text-lg font-semibold text-primary border-l-4 border-primary pl-2">Ability Scores</h2>
+                <h2 className={cn("text-primary border-l-4 border-primary pl-2", typography.display.h2)}>Ability Scores</h2>
                 <div className="flex items-center gap-2">
                   <Checkbox
                     id="abilities-toggle"
@@ -614,7 +618,7 @@ export default function NewClientForm() {
                 </div>
               </div>
               {showAbilities && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-muted rounded-lg p-4 border">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-muted rounded-lg p-4 border">
                   <SliderField
                     control={control}
                     name="abilityIntuition"
@@ -669,7 +673,7 @@ export default function NewClientForm() {
 
             {/* Reader's Notes */}
             <section>
-              <h2 className="text-lg font-semibold text-primary mb-4 border-l-4 border-primary pl-2">Reader's Notes</h2>
+              <h2 className={cn("text-primary mb-4 border-l-4 border-primary pl-2", typography.display.h2)}>Reader's Notes</h2>
               <FormField
                 control={control}
                 name="readerNotes"

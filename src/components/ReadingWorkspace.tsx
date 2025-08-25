@@ -34,11 +34,12 @@ interface DrawnTarotCard extends TarotCard {
   position: "Upright" | "Reversed";
 }
 
-export default function ReadingWorkspace({ copilotEnabled = true }: { copilotEnabled?: boolean }) {
+export default function ReadingWorkspace({ copilotEnabled: propCopilotEnabled = true }: { copilotEnabled?: boolean }) {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   const cameFrom = location.state?.from; // Check where we came from
+  const stateCopilotEnabled = location.state?.copilotEnabled; // Get copilot state from navigation
 
   const [drawnCards, setDrawnCards] = useState<DrawnTarotCard[]>([]);
   const [selectedCard, setSelectedCard] = useState<DrawnTarotCard | null>(
@@ -56,6 +57,8 @@ export default function ReadingWorkspace({ copilotEnabled = true }: { copilotEna
   const [copilotInsights, setCopilotInsights] = useState<CopilotInsights | null>(null);
   const [useDemoCopilot, setUseDemoCopilot] = useState(true); // Toggle for demo/real
   const [loadingCopilot, setLoadingCopilot] = useState(false);
+  // Use copilot state from navigation if available, otherwise fall back to prop
+  const copilotEnabled = stateCopilotEnabled !== undefined ? stateCopilotEnabled : propCopilotEnabled;
 
   const [selectedClient, setSelectedClient] = useState<FullClient | null>(null);
   const prevQuestionRef = useRef<string>("");
@@ -240,12 +243,20 @@ export default function ReadingWorkspace({ copilotEnabled = true }: { copilotEna
               </div>
             </div>
           </div>
-          <Dialog open={showSOAPModal} onOpenChange={setShowSOAPModal}>
-            <Button onClick={() => setShowSOAPModal(true)}>
-              <FileText className="w-5 h-5" />
-              Complete Session
-            </Button>
-          </Dialog>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Sparkles className={`w-4 h-4 ${copilotEnabled ? 'text-primary' : 'text-muted-foreground'}`} />
+              <span className={`text-sm ${copilotEnabled ? 'text-primary' : 'text-muted-foreground'}`}>
+                Copilot {copilotEnabled ? 'Enabled' : 'Disabled'}
+              </span>
+            </div>
+            <Dialog open={showSOAPModal} onOpenChange={setShowSOAPModal}>
+              <Button onClick={() => setShowSOAPModal(true)}>
+                <FileText className="w-5 h-5" />
+                Complete Session
+              </Button>
+            </Dialog>
+          </div>
         </div>
 
         {/* Client Select */}
