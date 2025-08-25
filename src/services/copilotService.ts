@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import type { FullClient } from "./clientService";
 
 export interface CopilotInsights {
   sentiment: {
@@ -54,7 +55,7 @@ export interface CopilotInsights {
 export async function getCopilotInsights({ question, cards, user }: {
   question: string;
   cards: string[];
-  user: any;
+  user: FullClient | null;
 }): Promise<CopilotInsights> {
   const { data, error } = await supabase.functions.invoke('interpret-cards', {
     body: { question, cards, user },

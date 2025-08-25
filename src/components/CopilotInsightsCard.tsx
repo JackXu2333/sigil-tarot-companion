@@ -1,4 +1,3 @@
-import React from "react";
 import { Sparkles, Lightbulb, BookOpen, HelpCircle, Send, TrendingUp, Flame, Droplets, Wind, Mountain, Brain, Heart, Star, Package, AlertTriangle, CheckCircle } from "lucide-react";
 import type { CopilotInsights } from "@/services/copilotService";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,13 +28,6 @@ const THRESHOLDS = {
   LOW_SENTIMENT: -0.5
 } as const;
 
-// Helper to get sentiment color using design tokens
-const getSentimentColor = (value: number) => {
-  if (value >= THRESHOLDS.HIGH_SENTIMENT) return "text-emerald-600 dark:text-emerald-400";
-  if (value >= 0) return "text-primary";
-  if (value >= THRESHOLDS.LOW_SENTIMENT) return "text-amber-600 dark:text-amber-400";
-  return "text-destructive";
-};
 
 // Helper to format sentiment value
 const formatSentiment = (value: number) => {
@@ -59,9 +51,7 @@ export function CopilotInsightsCard({ insights, onSendToSOAP }: Props) {
     );
   }
 
-  // Highlight logic
-  const highOpportunity = insights.scales.opportunity >= THRESHOLDS.HIGH_OPPORTUNITY;
-  const lowDifficulty = insights.scales.difficulty <= THRESHOLDS.LOW_DIFFICULTY;
+  // Highlight logic (variables currently not used in UI)
   const activeReceptiveSum = insights.energyBalance.active + insights.energyBalance.receptive;
   const energyAreas = [
     { key: 'mental', value: insights.energyBalance.mental },

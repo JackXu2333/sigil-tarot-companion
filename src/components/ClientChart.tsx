@@ -6,7 +6,7 @@ import { ArrowLeft, BookOpen, MessageSquare, Star, Edit, Sparkles, Save, X, Plus
 import { formatDistanceToNow } from "date-fns/formatDistanceToNow";
 import { PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, RadarChart, ResponsiveContainer } from 'recharts';
 import { clientService, type FullClient } from "@/services/clientService";
-import { readingService } from "@/services/readingService";
+import { readingService, type Reading } from "@/services/readingService";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -80,8 +80,9 @@ const MBTIScale = ({ value, labels }: { value?: number; labels: [string, string]
 };
 
 const AttachmentStyleMatrix = ({ anxiety, avoidance }: { anxiety: number; avoidance: number }) => {
-  const top = 100 - ((anxiety + 5) * 10);
-  const left = (avoidance + 5) * 10;
+  // Convert 0-10 scale to percentage (0-100%)
+  const top = 100 - (anxiety * 10);
+  const left = avoidance * 10;
 
   return (
     <div>
@@ -107,7 +108,7 @@ export default function ClientChart() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [client, setClient] = useState<FullClient | null>(null);
-  const [readings, setReadings] = useState<any[]>([]);
+  const [readings, setReadings] = useState<Reading[]>([]);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [editedClient, setEditedClient] = useState<Partial<FullClient>>({});
@@ -139,27 +140,36 @@ export default function ClientChart() {
     };
 
     loadData();
-  }, [id, toast]);
+  }, [id]);
 
   const handleSave = async () => {
     if (!client || !id) return;
+
+    // Helper to convert undefined to null for database consistency
+    const toNull = (obj: any): any => {
+      const result: any = {};
+      for (const key in obj) {
+        result[key] = obj[key] === undefined ? null : obj[key];
+      }
+      return result;
+    };
 
     try {
       // Extract only basic information for the main client update
       const { mbti, attachment, abilities, ...basicInfo } = editedClient;
 
       // Update the main client data
-      const updatedClient = await clientService.updateClient(id, basicInfo);
+      const updatedClient = await clientService.updateClient(id, toNull(basicInfo));
 
       // Update related data if it exists
       if (mbti) {
-        await clientService.updateClientMBTI(id, mbti);
+        await clientService.updateClientMBTI(id, toNull(mbti));
       }
       if (attachment) {
-        await clientService.updateClientAttachment(id, attachment);
+        await clientService.updateClientAttachment(id, toNull(attachment));
       }
       if (abilities) {
-        await clientService.updateClientAbilities(id, abilities);
+        await clientService.updateClientAbilities(id, toNull(abilities));
       }
 
       setClient({ ...client, ...updatedClient });
@@ -185,6 +195,11 @@ export default function ClientChart() {
         reading_type: quickAddType,
         content: quickAddNote,
         reading_date: new Date().toISOString().split('T')[0],
+        question: null,
+        cards: null,
+        subjective: null,
+        assessment: null,
+        plan: null,
       });
 
       setReadings([newReading, ...readings]);
@@ -211,7 +226,7 @@ export default function ClientChart() {
 
     setEditedClient({
       ...editedClient,
-      mbti: updatedMBTI as any,
+      mbti: updatedMBTI as NonNullable<FullClient['mbti']>,
     });
   };
 
@@ -243,7 +258,7 @@ export default function ClientChart() {
   };
 
   // Helper function to check if abilityData has valid values
-  const hasValidAbilityData = (data: any[]) => {
+  const hasValidAbilityData = (data: Array<{A: number}>) => {
     if (!data || !data.length) return false;
     // Check if at least one ability has a non-zero value
     return data.some(item => item.A > 0);
@@ -639,7 +654,7 @@ export default function ClientChart() {
                     {isEditing ? (
                       <>
                         <BipolarSlider
-                          value={editedClient.mbti?.ie_score}
+                          value={editedClient.mbti?.ie_score ?? undefined}
                           onChange={(value) => handleMBTIChange('ie_score', value)}
                           leftLabel="I"
                           rightLabel="E"
@@ -647,7 +662,7 @@ export default function ClientChart() {
                           max={100}
                         />
                         <BipolarSlider
-                          value={editedClient.mbti?.ns_score}
+                          value={editedClient.mbti?.ns_score ?? undefined}
                           onChange={(value) => handleMBTIChange('ns_score', value)}
                           leftLabel="S"
                           rightLabel="N"
@@ -655,7 +670,7 @@ export default function ClientChart() {
                           max={100}
                         />
                         <BipolarSlider
-                          value={editedClient.mbti?.ft_score}
+                          value={editedClient.mbti?.ft_score ?? undefined}
                           onChange={(value) => handleMBTIChange('ft_score', value)}
                           leftLabel="T"
                           rightLabel="F"
@@ -663,7 +678,7 @@ export default function ClientChart() {
                           max={100}
                         />
                         <BipolarSlider
-                          value={editedClient.mbti?.jp_score}
+                          value={editedClient.mbti?.jp_score ?? undefined}
                           onChange={(value) => handleMBTIChange('jp_score', value)}
                           leftLabel="P"
                           rightLabel="J"
@@ -673,10 +688,10 @@ export default function ClientChart() {
                       </>
                     ) : (
                       <>
-                        <MBTIScale value={client.mbti?.ie_score} labels={['I', 'E']} />
-                        <MBTIScale value={client.mbti?.ns_score} labels={['S', 'N']} />
-                        <MBTIScale value={client.mbti?.ft_score} labels={['T', 'F']} />
-                        <MBTIScale value={client.mbti?.jp_score} labels={['P', 'J']} />
+                        <MBTIScale value={client.mbti?.ie_score ?? undefined} labels={['I', 'E']} />
+                        <MBTIScale value={client.mbti?.ns_score ?? undefined} labels={['S', 'N']} />
+                        <MBTIScale value={client.mbti?.ft_score ?? undefined} labels={['T', 'F']} />
+                        <MBTIScale value={client.mbti?.jp_score ?? undefined} labels={['P', 'J']} />
                       </>
                     )}
                   </div>
@@ -693,15 +708,17 @@ export default function ClientChart() {
                           attachment: {
                             id: editedClient.attachment?.id || '',
                             client_id: editedClient.attachment?.client_id || id || '',
-                            ...(editedClient.attachment || {}),
-                            anxiety_score: value
+                            anxiety_score: value,
+                            avoidance_score: editedClient.attachment?.avoidance_score ?? null,
+                            created_at: editedClient.attachment?.created_at || '',
+                            updated_at: editedClient.attachment?.updated_at || ''
                           }
                         })}
                         leftLabel="Low"
                         rightLabel="High"
                         label="Anxiety"
-                        min={-5}
-                        max={5}
+                        min={0}
+                        max={10}
                       />
                       <BipolarSlider
                         value={editedClient.attachment?.avoidance_score || 0}
@@ -710,15 +727,17 @@ export default function ClientChart() {
                           attachment: {
                             id: editedClient.attachment?.id || '',
                             client_id: editedClient.attachment?.client_id || id || '',
-                            ...(editedClient.attachment || {}),
-                            avoidance_score: value
+                            anxiety_score: editedClient.attachment?.anxiety_score ?? null,
+                            avoidance_score: value,
+                            created_at: editedClient.attachment?.created_at || '',
+                            updated_at: editedClient.attachment?.updated_at || ''
                           }
                         })}
                         leftLabel="Low"
                         rightLabel="High"
                         label="Avoidance"
-                        min={-5}
-                        max={5}
+                        min={0}
+                        max={10}
                       />
                     </div>
                   ) : (
@@ -755,8 +774,14 @@ export default function ClientChart() {
                       abilities: {
                         id: editedClient.abilities?.id || '',
                         client_id: editedClient.abilities?.client_id || id || '',
-                        ...(editedClient.abilities || {}),
-                        intuition: value
+                        intuition: value,
+                        empathy: editedClient.abilities?.empathy ?? null,
+                        ambition: editedClient.abilities?.ambition ?? null,
+                        intellect: editedClient.abilities?.intellect ?? null,
+                        creativity: editedClient.abilities?.creativity ?? null,
+                        self_awareness: editedClient.abilities?.self_awareness ?? null,
+                        created_at: editedClient.abilities?.created_at || '',
+                        updated_at: editedClient.abilities?.updated_at || ''
                       }
                     })}
                     leftLabel="Low"
@@ -771,8 +796,14 @@ export default function ClientChart() {
                       abilities: {
                         id: editedClient.abilities?.id || '',
                         client_id: editedClient.abilities?.client_id || id || '',
-                        ...(editedClient.abilities || {}),
-                        empathy: value
+                        intuition: editedClient.abilities?.intuition ?? null,
+                        empathy: value,
+                        ambition: editedClient.abilities?.ambition ?? null,
+                        intellect: editedClient.abilities?.intellect ?? null,
+                        creativity: editedClient.abilities?.creativity ?? null,
+                        self_awareness: editedClient.abilities?.self_awareness ?? null,
+                        created_at: editedClient.abilities?.created_at || '',
+                        updated_at: editedClient.abilities?.updated_at || ''
                       }
                     })}
                     leftLabel="Low"
@@ -787,8 +818,14 @@ export default function ClientChart() {
                       abilities: {
                         id: editedClient.abilities?.id || '',
                         client_id: editedClient.abilities?.client_id || id || '',
-                        ...(editedClient.abilities || {}),
-                        ambition: value
+                        intuition: editedClient.abilities?.intuition ?? null,
+                        empathy: editedClient.abilities?.empathy ?? null,
+                        ambition: value,
+                        intellect: editedClient.abilities?.intellect ?? null,
+                        creativity: editedClient.abilities?.creativity ?? null,
+                        self_awareness: editedClient.abilities?.self_awareness ?? null,
+                        created_at: editedClient.abilities?.created_at || '',
+                        updated_at: editedClient.abilities?.updated_at || ''
                       }
                     })}
                     leftLabel="Low"
@@ -803,8 +840,14 @@ export default function ClientChart() {
                       abilities: {
                         id: editedClient.abilities?.id || '',
                         client_id: editedClient.abilities?.client_id || id || '',
-                        ...(editedClient.abilities || {}),
-                        intellect: value
+                        intuition: editedClient.abilities?.intuition ?? null,
+                        empathy: editedClient.abilities?.empathy ?? null,
+                        ambition: editedClient.abilities?.ambition ?? null,
+                        intellect: value,
+                        creativity: editedClient.abilities?.creativity ?? null,
+                        self_awareness: editedClient.abilities?.self_awareness ?? null,
+                        created_at: editedClient.abilities?.created_at || '',
+                        updated_at: editedClient.abilities?.updated_at || ''
                       }
                     })}
                     leftLabel="Low"
@@ -819,8 +862,14 @@ export default function ClientChart() {
                       abilities: {
                         id: editedClient.abilities?.id || '',
                         client_id: editedClient.abilities?.client_id || id || '',
-                        ...(editedClient.abilities || {}),
-                        creativity: value
+                        intuition: editedClient.abilities?.intuition ?? null,
+                        empathy: editedClient.abilities?.empathy ?? null,
+                        ambition: editedClient.abilities?.ambition ?? null,
+                        intellect: editedClient.abilities?.intellect ?? null,
+                        creativity: value,
+                        self_awareness: editedClient.abilities?.self_awareness ?? null,
+                        created_at: editedClient.abilities?.created_at || '',
+                        updated_at: editedClient.abilities?.updated_at || ''
                       }
                     })}
                     leftLabel="Low"
@@ -835,8 +884,14 @@ export default function ClientChart() {
                       abilities: {
                         id: editedClient.abilities?.id || '',
                         client_id: editedClient.abilities?.client_id || id || '',
-                        ...(editedClient.abilities || {}),
-                        self_awareness: value
+                        intuition: editedClient.abilities?.intuition ?? null,
+                        empathy: editedClient.abilities?.empathy ?? null,
+                        ambition: editedClient.abilities?.ambition ?? null,
+                        intellect: editedClient.abilities?.intellect ?? null,
+                        creativity: editedClient.abilities?.creativity ?? null,
+                        self_awareness: value,
+                        created_at: editedClient.abilities?.created_at || '',
+                        updated_at: editedClient.abilities?.updated_at || ''
                       }
                     })}
                     leftLabel="Low"

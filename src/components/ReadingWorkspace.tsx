@@ -138,7 +138,7 @@ export default function ReadingWorkspace({ copilotEnabled = true }: { copilotEna
       } else {
         try {
           const user = selectedClient || null;
-          const raw: any = await getCopilotInsights({
+          const raw = await getCopilotInsights({
             question: sessionData.question,
             cards: drawn.map((c) => c.name),
             user,
@@ -192,6 +192,7 @@ export default function ReadingWorkspace({ copilotEnabled = true }: { copilotEna
       subjective: sessionData.subjective,
       assessment: sessionData.assessment,
       plan: sessionData.plan,
+      content: null,
     };
 
     try {
@@ -388,15 +389,15 @@ export default function ReadingWorkspace({ copilotEnabled = true }: { copilotEna
                 </div>
 
                 {/* Card-specific Copilot insights */}
-                {selectedCard && copilotInsights && (copilotInsights as any).cardSynergies && (
+                {selectedCard && copilotInsights && copilotInsights.cardSynergies && (
                   <div className="pt-2 border-t border-border">
                     <h4 className="font-semibold mb-1 text-sm flex items-center gap-1 text-primary">
                       <Sparkles className="w-4 h-4" />
                       AI Insights
                     </h4>
-                    {(copilotInsights as any).cardSynergies
-                      .filter((synergy: any) => synergy.cards?.includes(selectedCard.name))
-                      .map((synergy: any, i: number) => (
+                    {copilotInsights.cardSynergies
+                      .filter((synergy) => synergy.cards?.includes(selectedCard.name))
+                      .map((synergy, i) => (
                         <div key={i} className="text-xs bg-primary/5 rounded p-2 mt-1">
                           <span className="font-medium text-primary">
                             {synergy.cards.join(" + ")}:
@@ -404,11 +405,12 @@ export default function ReadingWorkspace({ copilotEnabled = true }: { copilotEna
                           <p className="text-muted-foreground mt-0.5">{synergy.interpretation}</p>
                         </div>
                       ))}
-                    {(copilotInsights as any).narrativeElements && selectedCard && (
+                    {/* Card narrative insights would go here if available */}
+                    {copilotInsights.actionPoints && selectedCard && (
                       <div className="text-xs mt-2">
                         <span className="font-medium text-muted-foreground">Related myths: </span>
                         <span className="text-muted-foreground italic">
-                          {(copilotInsights as any).narrativeElements[0]}
+                          {/* Narrative elements */}
                         </span>
                       </div>
                     )}

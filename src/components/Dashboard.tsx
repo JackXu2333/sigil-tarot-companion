@@ -6,7 +6,6 @@ import { cva, type VariantProps } from "class-variance-authority";
 import {
   Search,
   Plus,
-  User,
   BookOpen,
   Activity,
   Sparkles,

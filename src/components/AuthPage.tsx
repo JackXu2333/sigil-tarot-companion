@@ -39,7 +39,7 @@ export default function AuthPage() {
             : "Check your email to confirm your account!"
         );
       }
-    } catch (error) {
+    } catch {
       toast.error("An unexpected error occurred");
     } finally {
       setLoading(false);
